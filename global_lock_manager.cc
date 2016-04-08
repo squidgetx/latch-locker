@@ -25,6 +25,13 @@ bool GlobalLockManager::WriteLock(Txn* txn, const Key key) {
   list->push_back(*newreq);
 
   table_mutex.unlock();
+
+  while (newreq->state_ == WAIT) {
+    // OS condition variable wait on txn->txn_mutex
+  }
+
+
+
   return wasEmpty;
 }
 
@@ -53,6 +60,10 @@ bool GlobalLockManager::ReadLock(Txn* txn, const Key key) {
     newreq->state_ = ACTIVE;
   }
   table_mutex.unlock();
+
+  while (newreq->state_ == WAIT) {
+    // OS condition variable wait on txn->txn_mutex
+  }
 
   return (newreq->state_ == ACTIVE);
 }
@@ -111,11 +122,13 @@ void GlobalLockManager::Release(Txn* txn, const Key key) {
         break;
       }
       i->state_ = ACTIVE;
+      // OS Signal
     }
 
   } else {
     // Just grant to the lock to this request (exclusive lock)
     next->state_ = ACTIVE;
+    // OS Signal
   }
 
   table_mutex.unlock();

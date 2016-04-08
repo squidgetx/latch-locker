@@ -3,7 +3,7 @@
 
 class Txn {
   public: 
-    mutex txn_mutex;
+    Pthread_mutex txn_mutex;
 
 }
 

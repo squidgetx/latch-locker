@@ -85,7 +85,7 @@ class GlobalLockManager : public LockManager {
   virtual void Release(Txn* txn, const Key key);
   //virtual LockMode Status(const Key& key, vector<int>* owners);
  protected: 
-  mutex table_mutex;
+  Pthread_mutex table_mutex;
 
 };
 
