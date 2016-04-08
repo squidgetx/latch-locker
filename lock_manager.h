@@ -1,0 +1,92 @@
+// Interface for lock managers in the system.
+
+#ifndef _LOCK_MANAGER_H_
+#define _LOCK_MANAGER_H_
+
+#include <deque>
+#include <cstdlib>
+#include <tr1/unordered_map>
+
+using std::deque;
+using std::tr1::unordered_map;
+
+// This interface supports locks being held in both read/shared and
+// write/exclusive modes.
+enum LockMode {
+  UNLOCKED = 0,
+  SHARED = 1,
+  EXCLUSIVE = 2,
+};
+
+enum LockState {
+  ACTIVE = 0,
+  WAIT = 1,
+};
+
+class LockManager {
+ public:
+  virtual ~LockManager() {}
+
+  // Attempts to grant a read lock to the specified transaction, enqueueing
+  // request in lock table. Returns true if lock is immediately granted, else
+  // returns false.
+  //
+  // Requires: Neither ReadLock nor WriteLock has previously been called with
+  //           this txn and key.
+  virtual bool ReadLock(int txn, const int key) = 0;
+
+  // Attempts to grant a write lock to the specified transaction, enqueueing
+  // request in lock table. Returns true if lock is immediately granted, else
+  // returns false.
+  //
+  // Requires: Neither ReadLock nor WriteLock has previously been called with
+  //           this txn and key.
+  virtual bool WriteLock(int txn, const int key) = 0;
+
+  // Releases lock held by 'txn' on 'key', or cancels any pending request for
+  // a lock on 'key' by 'txn'. If 'txn' held an EXCLUSIVE lock on 'key' (or was
+  // the sole holder of a SHARED lock on 'key'), then the next request(s) in the
+  // request queue is granted. 
+  //
+  // If the granted request(s) corresponds to a
+  // transaction that has now acquired ALL of its locks, that transaction is
+  // appended to the 'ready_txns_' queue.
+  virtual void Release(int txn, const int key) = 0;
+
+  // Sets '*owners' to contain the txn IDs of all txns holding the lock, and
+  // returns the current LockMode of the lock: UNLOCKED if it is not currently
+  // held, SHARED or EXCLUSIVE if it is, depending on the current state.
+  // virtual LockMode Status(const int key, vector<int>* owners) = 0;
+
+ protected:
+
+  struct LockRequest {
+    LockRequest(LockMode m, int t) : txn_(t), mode_(m) {}
+    int txn_;       // Pointer to txn requesting the lock.
+    LockMode mode_;  // Specifies whether this is a read or write lock request.
+    LockState state_;
+  };
+  // List is a placeholder for linked list structure we will define later
+  // also unordered map will be later implemented
+
+  unordered_map<int, deque<LockRequest>*> lock_table_;
+
+};
+
+// Version of the LockManager using a global mutex
+class GlobalLockManager : public LockManager {
+ public:
+  explicit GlobalLockManager();
+  inline virtual ~GlobalLockManager() {}
+
+  virtual bool ReadLock(int txn, const int key);
+  virtual bool WriteLock(int txn, const int key);
+  virtual void Release(int txn, const int key);
+  //virtual LockMode Status(const Key& key, vector<int>* owners);
+ protected: 
+  mutex table_mutex;
+
+};
+
+#endif  // _LOCK_MANAGER_H_
+
