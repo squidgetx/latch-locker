@@ -4,6 +4,7 @@
 #define _LOCK_MANAGER_H_
 
 #include "util/common.h"
+#include "txn.h"
 #include <deque>
 #include <tr1/unordered_map>
 
@@ -33,7 +34,7 @@ class LockManager {
   //
   // Requires: Neither ReadLock nor WriteLock has previously been called with
   //           this txn and key.
-  virtual bool ReadLock(Txn txn, const Key key) = 0;
+  virtual bool ReadLock(Txn* txn, const Key key) = 0;
 
   // Attempts to grant a write lock to the specified transaction, enqueueing
   // request in lock table. Returns true if lock is immediately granted, else
@@ -41,7 +42,7 @@ class LockManager {
   //
   // Requires: Neither ReadLock nor WriteLock has previously been called with
   //           this txn and key.
-  virtual bool WriteLock(Txn txn, const Key key) = 0;
+  virtual bool WriteLock(Txn* txn, const Key key) = 0;
 
   // Releases lock held by 'txn' on 'key', or cancels any pending request for
   // a lock on 'key' by 'txn'. If 'txn' held an EXCLUSIVE lock on 'key' (or was
@@ -51,7 +52,7 @@ class LockManager {
   // If the granted request(s) corresponds to a
   // transaction that has now acquired ALL of its locks, that transaction is
   // appended to the 'ready_txns_' queue.
-  virtual void Release(Txn txn, const Key key) = 0;
+  virtual void Release(Txn* txn, const Key key) = 0;
 
   // Sets '*owners' to contain the txn IDs of all txns holding the lock, and
   // returns the current LockMode of the lock: UNLOCKED if it is not currently
@@ -61,8 +62,8 @@ class LockManager {
  protected:
 
   struct LockRequest {
-    LockRequest(LockMode m, int t) : txn_(t), mode_(m) {}
-    Txn txn_;       // Pointer to txn requesting the lock.
+    LockRequest(LockMode m, Txn* t) : txn_(t), mode_(m) {}
+    Txn* txn_;       // Pointer to txn requesting the lock.
     LockMode mode_;  // Specifies whether this is a read or write lock request.
     LockState state_;
   };
@@ -79,9 +80,9 @@ class GlobalLockManager : public LockManager {
   explicit GlobalLockManager();
   inline virtual ~GlobalLockManager() {}
 
-  virtual bool ReadLock(Txn txn, const Key key);
-  virtual bool WriteLock(Txn txn, const Key key);
-  virtual void Release(Txn txn, const Key key);
+  virtual bool ReadLock(Txn* txn, const Key key);
+  virtual bool WriteLock(Txn* txn, const Key key);
+  virtual void Release(Txn* txn, const Key key);
   //virtual LockMode Status(const Key& key, vector<int>* owners);
  protected: 
   mutex table_mutex;

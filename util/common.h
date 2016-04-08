@@ -2,8 +2,8 @@
 #define _COMMON_H_
 
 #include <cstdlib>
+#include "util/txn.h"
 
 typedef uint64 Key;
-typedef uint64 Txn;
 
 #endif
