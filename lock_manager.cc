@@ -4,7 +4,7 @@ GlobalLockManager::GlobalLockManager() {
 
 }
 
-bool GlobalLockManager::WriteLock(int txn, const int key) {
+bool GlobalLockManager::WriteLock(Txn* txn, const Key key) {
   // Get an exclusive lock on the item
 
   table_mutex.lock();
@@ -24,12 +24,11 @@ bool GlobalLockManager::WriteLock(int txn, const int key) {
 
   list->push_back(*newreq);
 
-
   table_mutex.unlock();
   return wasEmpty;
 }
 
-bool GlobalLockManager::ReadLock(int txn, const int key) {
+bool GlobalLockManager::ReadLock(Txn* txn, const Key key) {
   table_mutex.lock();
 
   deque<LockRequest> * list = lock_table_[key];
@@ -59,7 +58,7 @@ bool GlobalLockManager::ReadLock(int txn, const int key) {
 }
 
 
-void GlobalLockManager::Release(int txn, const int key) {
+void GlobalLockManager::Release(Txn* txn, const Key key) {
   table_mutex.lock();
 
   deque<LockRequest> * list = lock_table_[key];
@@ -123,7 +122,7 @@ void GlobalLockManager::Release(int txn, const int key) {
 }
 
 /*
-LockMode GlobalLockManager::Status(const int key, vector<int>* owners) {
+LockMode GlobalLockManager::Status(const Key key, vector<int>* owners) {
   // CPSC 438/538:
   //
   // Implement this method!
