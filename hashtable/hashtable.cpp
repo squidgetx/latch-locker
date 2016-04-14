@@ -1,9 +1,10 @@
 #include "hashtable.h"
+#include <iostream>
 
 Hashtable::Hashtable(int n) {
 	num_buckets = n;
 
-	list_array = reinterpret_cast<LockRequestLinkedList*> (new char[100*sizeof(LockRequestLinkedList)*num_buckets*DEFAULT_BUCKET_SIZE]);
+	list_array = reinterpret_cast<LockRequestLinkedList*> (new char[sizeof(LockRequestLinkedList)*num_buckets*DEFAULT_BUCKET_SIZE]);
 	memory_array = reinterpret_cast<TNode<LockRequest>*> (new char[sizeof(TNode<LockRequest>)*num_buckets*DEFAULT_BUCKET_SIZE*DEFAULT_LIST_SIZE]);
 	memory_ptr = memory_array;
 	pthread_mutex_init(&global_lock, NULL);
@@ -15,7 +16,8 @@ Hashtable::Hashtable(int n) {
 	for (int i = 0; i < num_buckets*DEFAULT_BUCKET_SIZE; i++)
 	{
 		MemoryChunk<TNode<LockRequest> > mem(&memory_array[DEFAULT_LIST_SIZE*i], DEFAULT_LIST_SIZE);
-		new (&list_array[i*sizeof(LockRequestLinkedList)]) LockRequestLinkedList(&mem, memory_array, &memory_ptr, &global_lock);
+		new (&list_array[i]) LockRequestLinkedList(&mem, memory_array, &memory_ptr, &global_lock);
+
 	}
 
 	for (int i = 0; i < num_buckets; i++)
