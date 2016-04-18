@@ -22,6 +22,7 @@ enum LockMode {
 enum LockState {
   ACTIVE = 0,
   WAIT = 1,
+  OBSOLETE = 1,
 };
 
 class LockManager {
@@ -88,6 +89,20 @@ class GlobalLockManager : public LockManager {
   Pthread_mutex table_mutex;
 
 };
+
+// Version of the lock manager using the latch free algorithm
+class LatchFreeLockManager : public LockManager {
+  public:
+    explicit LatchFreeLockManager();
+    inline virtual ~LatchFreeLockManager() {}
+
+    virtual bool ReadLock(Txn* txn, const Key key);
+    virtual bool WriteLock(Txn* txn, const Key key);
+    virtual void Release(Txn* txn, const Key key);
+
+  private:
+    LockRequestLinkedList ** locks;
+}
 
 #endif  // _LOCK_MANAGER_H_
 
