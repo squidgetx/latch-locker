@@ -26,6 +26,7 @@ Hashtable::Hashtable(int n) {
 		for (int j = 0; j < DEFAULT_BUCKET_SIZE; j++)
 		{
 			bucket_array[i].slots[j] = &list_array[i*DEFAULT_BUCKET_SIZE + j];
+			bucket_array[i].keys[j] = -1;
 		}
 	}
 }
@@ -53,7 +54,7 @@ void Hashtable::lock_insert(int key, LockRequest& lr) {
 	pthread_mutex_unlock(&lock_array[b_index]);
 }
 
-LockRequestLinkedList* Hashtable::get_list(int key) {
+TNode<LockRequest>* Hashtable::get_list(int key) {
 	int b_index = key % num_buckets;
 	int i;
 	pthread_mutex_lock(&lock_array[b_index]);
@@ -69,7 +70,7 @@ LockRequestLinkedList* Hashtable::get_list(int key) {
 		}
 	}
 	pthread_mutex_unlock(&lock_array[b_index]);
-	return bucket_array[b_index].slots[i];
+	return bucket_array[b_index].slots[i]->head;
 }
 
 void Hashtable::lock_delete(int key, TNode<LockRequest>* lr)

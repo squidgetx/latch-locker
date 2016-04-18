@@ -11,6 +11,8 @@ public:
 
     TLinkedList() 
     {
+        head = NULL;
+        tail = NULL;
         isize = 0;
     }
 

@@ -21,6 +21,7 @@ class LockRequestLinkedList: private TLinkedList<LockRequest>
 		void insertRequest(LockRequest lr);
 		void deleteRequest(TNode<LockRequest>* lr);
 		using TLinkedList<LockRequest>::head;
+		using TLinkedList<LockRequest>::tail;
 
 	private:
 		int size_to_req;
