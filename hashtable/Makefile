@@ -1,2 +1,2 @@
 all:
-	g++ test.cpp hashtable.cpp LockRequestLinkedList.cpp -o test -g
+	g++ --std=c++11 test.cc hashtable.cc LockRequestLinkedList.cc -o test -g
