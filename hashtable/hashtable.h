@@ -1,3 +1,6 @@
+#ifndef HASHTABLE_HASHTABLE_H
+#define HASHTABLE_HASHTABLE_H
+
 #include <pthread.h>
 #include "LockRequestLinkedList.h"
 #include <new>
@@ -35,3 +38,5 @@ class Hashtable {
 		pthread_mutex_t global_lock;
 		Bucket* bucket_array;
 };
+
+#endif

@@ -1,3 +1,6 @@
+#ifndef HASHTABLE_LOCKREQUESTLINKEDLIST_H
+#define HASHTABLE_LOCKREQUESTLINKEDLIST_H
+
 #include <pthread.h>
 #include "TLinkedList.h"
 
@@ -22,3 +25,5 @@ class LockRequestLinkedList: private TLinkedList<LockRequest>
 		pthread_mutex_t* global_lock;
 
 };
+
+#endif
