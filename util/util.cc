@@ -1,3 +1,4 @@
+#include <cstdint>
 #include <util.h>
 
 extern inline void do_pause();
