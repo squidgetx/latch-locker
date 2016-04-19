@@ -12,14 +12,14 @@ int main()
 	LockRequest r2(EXCLUSIVE, reinterpret_cast<Txn*>(32));
 	hasher->lock_insert(15,r1);
 	hasher->lock_insert(15,r2);
-	TNode<LockRequest>* it = hasher->get_list(15);
+	TNode<LockRequest>* it = hasher->latch_free_get_list(15)->head;
 	while (it != NULL)
 	{
 		std::cout << it->data.txn_ << std::endl;
 		it = it->next;
 	}
-	hasher->lock_delete(15, hasher->get_list(15));
-	it = hasher->get_list(15);
+	hasher->lock_delete(15, hasher->latch_free_get_list(15)->head);
+	it = hasher->latch_free_get_list(15)->head;
 	while (it != NULL)
 	{
 		std::cout << it->data.txn_ << std::endl;

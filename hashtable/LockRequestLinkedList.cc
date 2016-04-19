@@ -1,3 +1,7 @@
+#include <cstdint>
+
+#include "util/util.h"
+
 #include "LockRequestLinkedList.h"
 
 LockRequestLinkedList::LockRequestLinkedList(MemoryChunk<TNode<LockRequest> >* init_mem,
@@ -10,7 +14,7 @@ LockRequestLinkedList::LockRequestLinkedList(MemoryChunk<TNode<LockRequest> >* i
   this->global_array_ptr = global_array_ptr;
   size_to_req = 2*DEFAULT_LIST_SIZE;
 
-  memory_list = new TLinkedList<MemoryChunk<TNode<LockRequest> > >; 
+  memory_list = new TLinkedList<MemoryChunk<TNode<LockRequest> > >;
   TNode<MemoryChunk<TNode<LockRequest> > >* init_chunk = new TNode<MemoryChunk<TNode<LockRequest> > >(*init_mem);
   memory_list->append(init_chunk);
 }
@@ -43,9 +47,10 @@ void LockRequestLinkedList::atomic_lock_insert(LockRequest lr)
 {
   // Append the new lock request using the latch free algorithm
   TNode<LockRequest> * lock = createRequest(lr);
-  uint64_t old_tail = xchgq((uint64_t *) &tail, (uint64_t) lock);
+  TNode<LockRequest> * old_tail = (TNode<LockRequest> *)
+    xchgq((uint64_t *) &tail, (uint64_t) lock);
   if (old_tail != NULL) {
-    ((TNode<LockRequest> *) old_tail)->next = lock;
+    old_tail->next = lock;
   }
   atomic_synchronize();
   next_pointer_update();

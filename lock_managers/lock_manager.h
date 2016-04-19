@@ -9,6 +9,7 @@
 
 #include "../util/common.h"
 #include "../hashtable/LockRequestLinkedList.h"
+#include "../hashtable/hashtable.h"
 
 #include "../lock_request.h"
 #include "../txn.h"

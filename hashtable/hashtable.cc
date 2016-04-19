@@ -66,25 +66,6 @@ void Hashtable::lock_insert(int key, LockRequest& lr) {
   pthread_mutex_unlock(&lock_array[b_index]);
 }
 
-TNode<LockRequest>* Hashtable::get_list(int key) {
-  int b_index = hash(key);
-  int i;
-  pthread_mutex_lock(&lock_array[b_index]);
-  try {
-    for (i = 0; i < DEFAULT_BUCKET_SIZE; i++) {
-      if (bucket_array[b_index].keys[i] == key) break;
-      else if (i == DEFAULT_BUCKET_SIZE - 1) throw 1;
-    }
-  }
-  catch (int e) {
-    if (e == 1) {
-      std::cout << "not found in bucket " << b_index << "\n";
-    }
-  }
-  pthread_mutex_unlock(&lock_array[b_index]);
-  return bucket_array[b_index].slots[i]->head;
-}
-
 LockRequestLinkedList * Hashtable::latch_free_get_list(int key) {
   int b_index = hash(key);
   int i;
