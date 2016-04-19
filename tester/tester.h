@@ -1,9 +1,10 @@
 #include <vector>
 #include <utility>
 
-#include "../lock_managers/lock_manager.h"
-#include "../util/common.h"
-#include "../txn.h"
+#include "lock_managers/lock_manager.h"
+#include "util/common.h"
+#include "txn.h"
+#include "lock_request.h"
 
 class Tester {
  public:
