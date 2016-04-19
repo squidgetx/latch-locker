@@ -25,15 +25,23 @@ public:
   void lock_delete(int key, TNode<LockRequest>* lr);
   pthread_mutex_t* get_mutex(int key);
 private:
+  inline int hash(int key);
+
   int num_buckets;
+
+  // Array of buckets (one bucket contains multiple linked lists
+  Bucket* bucket_array;
+
+  // Memory pool of linked list pointers
   LockRequestLinkedList* list_array;
+
+  // Memory pool of TNodes
   TNode<LockRequest>* memory_array;
   TNode<LockRequest>* memory_ptr;
 
 
   pthread_mutex_t* lock_array;
   pthread_mutex_t global_lock;
-  Bucket* bucket_array;
 };
 
 #endif
