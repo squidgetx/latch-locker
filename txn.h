@@ -5,6 +5,6 @@ class Txn {
   public: 
     Pthread_mutex txn_mutex;
 
-}
+};
 
 #endif
