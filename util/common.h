@@ -3,6 +3,6 @@
 
 #include <cstdlib>
 
-typedef uint64 Key;
+typedef uint64_t Key;
 
 #endif

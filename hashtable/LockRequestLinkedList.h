@@ -1,18 +1,9 @@
 #include <pthread.h>
 #include "TLinkedList.h"
+
+#include "../lock_request.h"
+
 #define DEFAULT_LIST_SIZE 5
-
-enum LockMode {
-  UNLOCKED = 0,
-  SHARED = 1,
-  EXCLUSIVE = 2,
-};
-
-struct LockRequest {
-	LockRequest(LockMode m, int t) : txn(t), mode(m) {}
-	int txn;       // Pointer to txn requesting the lock.
-	LockMode mode;  // Specifies whether this is a read or write lock request.
-};
 
 class LockRequestLinkedList: private TLinkedList<LockRequest>
 {

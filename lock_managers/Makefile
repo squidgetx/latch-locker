@@ -1,5 +1,5 @@
 CC=g++
-CCFLAGS=-O3
+CCFLAGS=-O3 --std=c++11
 
 CPP_SOURCES=$(wildcard *.cc)
 CPP_HEADERS=$(wildcard *.h)
