@@ -1,3 +1,6 @@
+#ifndef HASHTABLE_TLINKEDLIST_H
+#define HASHTABLE_TLINKEDLIST_H
+
 #include "TNode.h"
 
 template <typename T>
@@ -70,3 +73,5 @@ template <class T>
 int TLinkedList<T>::size() {
 	return isize;
 }
+
+#endif

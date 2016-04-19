@@ -1,3 +1,6 @@
+#ifndef HASHTABLE_TNODE_H
+#define HASHTABLE_TNODE_H
+
 template <typename T>
 struct TNode // Node is a private implementation detail
 {
@@ -14,3 +17,5 @@ struct MemoryChunk {
 	T* loc;
 	int size;
 };
+
+#endif
