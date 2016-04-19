@@ -5,15 +5,6 @@
 #include "../util/common.h"
 #include "../txn.h"
 
-// redefined, but with key
-struct LockRequest {
-  LockRequest(LockMode m, Txn* t, Key k) : txn_(t), mode_(m), key_(k) {}
-  Txn* txn_;       // Pointer to txn requesting the lock.
-  Key key_;
-  LockMode mode_;  // Specifies whether this is a read or write lock request.
-  LockState state_;
-};
-
 class Tester {
  public:
   Tester();
@@ -25,6 +16,9 @@ class Tester {
  	void Benchmark(std::vector<LockRequest> lock_requests);
  	std::vector<LockRequest> GenerateRequests(int n, int k, double w);
 
- 	LockManager mgrs[3];
+
+ 	GlobalLockManager *global_lock_manager;
+ 	// LatchedLockManager *latched_lock_manager;
+ 	LatchFreeLockManager *latchfree_lock_manager;
 
 };
