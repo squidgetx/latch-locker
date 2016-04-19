@@ -28,8 +28,8 @@ void LockRequestLinkedList::insertRequest(LockRequest lr)
 		memory_list->remove(memory_list->head);
 	}
 	memory_list->head->data.loc+=1;
-	node_mem->data.txn = lr.txn;
-	node_mem->data.mode = lr.mode;
+	node_mem->data.txn_ = lr.txn_;
+	node_mem->data.mode_ = lr.mode_;
 	append(node_mem);
 }
 

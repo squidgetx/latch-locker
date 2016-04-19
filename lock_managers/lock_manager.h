@@ -4,25 +4,18 @@
 #define _LOCK_MANAGER_H_
 
 #include <deque>
+#include <unordered_map>
+#include <pthread.h>
 
 #include "../util/common.h"
+#include "../hashtable/LockRequestLinkedList.h"
+
+#include "../lock_request.h"
+#include "../txn.h"
+
 
 using std::deque;
 using std::unordered_map;
-
-// This interface supports locks being held in both read/shared and
-// write/exclusive modes.
-enum LockMode {
-  UNLOCKED = 0,
-  SHARED = 1,
-  EXCLUSIVE = 2,
-};
-
-enum LockState {
-  ACTIVE = 0,
-  WAIT = 1,
-  OBSOLETE = 1,
-};
 
 class LockManager {
  public:
@@ -60,17 +53,25 @@ class LockManager {
   // virtual LockMode Status(const Key key, vector<int>* owners) = 0;
 
  protected:
-
-  struct LockRequest {
-    LockRequest(LockMode m, Txn* t) : txn_(t), mode_(m) {}
-    Txn* txn_;       // Pointer to txn requesting the lock.
-    LockMode mode_;  // Specifies whether this is a read or write lock request.
-    LockState state_;
-  };
   // List is a placeholder for linked list structure we will define later
   // also unordered map will be later implemented
 
   unordered_map<Key, deque<LockRequest>*> lock_table_;
+
+};
+
+// Version of the LockManager using a global mutex
+class KeyLockManager : public LockManager {
+ public:
+  explicit KeyLockManager();
+  inline virtual ~KeyLockManager() {}
+
+  virtual bool ReadLock(Txn* txn, const Key key);
+  virtual bool WriteLock(Txn* txn, const Key key);
+  virtual void Release(Txn* txn, const Key key);
+  //virtual LockMode Status(const Key& key, vector<int>* owners);
+ protected:
+  Pthread_mutex table_mutex;
 
 };
 
@@ -84,7 +85,7 @@ class GlobalLockManager : public LockManager {
   virtual bool WriteLock(Txn* txn, const Key key);
   virtual void Release(Txn* txn, const Key key);
   //virtual LockMode Status(const Key& key, vector<int>* owners);
- protected: 
+ protected:
   Pthread_mutex table_mutex;
 
 };
@@ -101,7 +102,7 @@ class LatchFreeLockManager : public LockManager {
 
   private:
     LockRequestLinkedList ** locks;
-}
+};
 
 #endif  // _LOCK_MANAGER_H_
 
