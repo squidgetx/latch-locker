@@ -3,13 +3,12 @@
 #ifndef _LOCK_MANAGER_H_
 #define _LOCK_MANAGER_H_
 
-#include "util/common.h"
-#include "txn.h"
 #include <deque>
-#include <tr1/unordered_map>
+
+#include "../util/common.h"
 
 using std::deque;
-using std::tr1::unordered_map;
+using std::unordered_map;
 
 // This interface supports locks being held in both read/shared and
 // write/exclusive modes.
