@@ -22,6 +22,7 @@ public:
   Hashtable(int n);
   void lock_insert(int key, LockRequest& lr);
   TNode<LockRequest>* get_list(int key);
+  LockRequestLinkedList * latch_free_get_list(int key);
   void lock_delete(int key, TNode<LockRequest>* lr);
   pthread_mutex_t* get_mutex(int key);
 private:

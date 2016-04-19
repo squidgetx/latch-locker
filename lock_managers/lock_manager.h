@@ -101,7 +101,7 @@ class LatchFreeLockManager : public LockManager {
     virtual void Release(Txn* txn, const Key key);
 
   private:
-    LockRequestLinkedList ** locks;
+    Hashtable table;
 };
 
 #endif  // _LOCK_MANAGER_H_

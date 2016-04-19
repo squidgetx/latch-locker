@@ -85,6 +85,23 @@ TNode<LockRequest>* Hashtable::get_list(int key) {
   return bucket_array[b_index].slots[i]->head;
 }
 
+LockRequestLinkedList * Hashtable::latch_free_get_list(int key) {
+  int b_index = hash(key);
+  int i;
+  try {
+    for (i = 0; i < DEFAULT_BUCKET_SIZE; i++) {
+      if (bucket_array[b_index].keys[i] == key) break;
+      else if (i == DEFAULT_BUCKET_SIZE - 1) throw 1;
+    }
+  }
+  catch (int e) {
+    if (e == 1) {
+      std::cout << "not found in bucket " << b_index << "\n";
+    }
+  }
+  return bucket_array[b_index].slots[i];
+}
+
 void Hashtable::lock_delete(int key, TNode<LockRequest>* lr)
 {
   int b_index = key % num_buckets;

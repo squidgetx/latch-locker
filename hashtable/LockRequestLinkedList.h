@@ -14,9 +14,13 @@ public:
   LockRequestLinkedList(MemoryChunk<TNode<LockRequest> >* init_mem, TNode<LockRequest>* global_array, TNode<LockRequest>** global_array_ptr, pthread_mutex_t* global_lock);
   void insertRequest(LockRequest lr);
   void deleteRequest(TNode<LockRequest>* lr);
+  void atomic_lock_insert(LockRequest lr);
+  TNode<LockRequest> * latch_free_next(TNode<LockRequest> * req);
   using TLinkedList<LockRequest>::head;
   using TLinkedList<LockRequest>::tail;
 private:
+  TNode<LockRequest> * createRequest(LockRequest lr);
+  void restoreChunk(TNode<LockRequest>* lr);
   int size_to_req;
   TLinkedList<MemoryChunk<TNode<LockRequest> > >* memory_list;
   TNode<LockRequest>* global_array;
