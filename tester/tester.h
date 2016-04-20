@@ -1,7 +1,7 @@
 #include <vector>
 #include <utility>
 
-#include "lock_managers/lock_manager.h"
+#include "lock_managers/global_lock_manager.h"
 #include "util/common.h"
 #include "txn.h"
 #include "lock_request.h"
@@ -18,8 +18,8 @@ private:
   std::vector<std::pair<Key, LockRequest>> GenerateRequests(int n, int k, double w);
 
 
-  GlobalLockManager *global_lock_manager;
+  GlobalLockManager global_lock_manager;
   // LatchedLockManager *latched_lock_manager;
-  LatchFreeLockManager *latchfree_lock_manager;
+  // LatchFreeLockManager *latchfree_lock_manager;
 
 };

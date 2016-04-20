@@ -12,7 +12,7 @@ include $(patsubst %, %/Makefile.inc, $(DIRS))
 
 BINS += test
 test: $(OBJECTS)
-	$(CC) $(CFLAGS) -o $@ $^
+	$(CXX) $(CFLAGS) -o $@ $^
 
 .PHONY: all
 all: $(OBJECTS) $(BINS)
