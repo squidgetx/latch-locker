@@ -1,4 +1,4 @@
-#include "lock_manager.h"
+#include "global_lock_manager.h"
 
 GlobalLockManager::GlobalLockManager() {
 

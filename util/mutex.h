@@ -7,18 +7,20 @@
 
 #include <pthread.h>
 
-class Pthread_mutex_lock;
-
 /**
  * Provides mutual exclusion, using pthread.
  */
 class Pthread_mutex {
 public:
-  Pthread_mutex();
-  inline void lock() {
+  Pthread_mutex() {
+    pthread_mutex_init(&mutex_handle, NULL);
+  }
+
+  void lock() {
     pthread_mutex_lock(&mutex_handle);
   }
-  inline void unlock() {
+
+  void unlock() {
     pthread_mutex_unlock(&mutex_handle);
   }
 private:
@@ -28,18 +30,19 @@ private:
 /**
  * RAII lock, based on Pthread_mutex
  */
-class Pthread_mutex_guard {
+class Pthread_mutex_lock {
 public:
-  Pthread_mutex_guard(Pthread_mutex mutex) : mutex(mutex) {
+  Pthread_mutex_lock(Pthread_mutex mutex) : mutex(mutex) {
     mutex.lock();
   }
-  ~Pthread_mutex_guard() {
+
+  ~Pthread_mutex_lock() {
     mutex.unlock();
   }
 
-  Pthread_mutex_guard operator=(const Pthread_mutex_guard&) = delete;
+  Pthread_mutex_lock operator=(const Pthread_mutex_lock& rhs) = delete;
 private:
   Pthread_mutex mutex;
 };
 
-#endif
+#endif // UTIL_MUTEX_H

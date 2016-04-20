@@ -40,7 +40,7 @@ class LockManager {
   // Releases lock held by 'txn' on 'key', or cancels any pending request for
   // a lock on 'key' by 'txn'. If 'txn' held an EXCLUSIVE lock on 'key' (or was
   // the sole holder of a SHARED lock on 'key'), then the next request(s) in the
-  // request queue is granted. 
+  // request queue is granted.
   //
   // If the granted request(s) corresponds to a
   // transaction that has now acquired ALL of its locks, that transaction is
