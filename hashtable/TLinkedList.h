@@ -75,7 +75,7 @@ int TLinkedList<T>::size() {
 }
 
 template <class T>
-int TLinkedList<T>::empty() {
+bool TLinkedList<T>::empty() {
   return head == tail;
 }
 
