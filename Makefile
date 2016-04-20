@@ -1,5 +1,5 @@
 CXX=g++
-CXXFLAGS=--std=c++11 -I$(CURDIR)
+CXXFLAGS=-g --std=c++11 -I$(CURDIR)
 
 DIRS=util lock_managers hashtable tester
 SOURCES :=
@@ -12,7 +12,7 @@ include $(patsubst %, %/Makefile.inc, $(DIRS))
 
 BINS += test
 test: $(OBJECTS)
-	$(CXX) $(CFLAGS) -o $@ $^
+	$(CXX) $(CXXFLAGS) -o $@ $^
 
 .PHONY: all
 all: $(OBJECTS) $(BINS)
