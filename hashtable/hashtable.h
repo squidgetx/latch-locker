@@ -5,6 +5,7 @@
 #include <new>
 
 #include "LockRequestLinkedList.h"
+#include "../lock_pool.h"
 
 
 
@@ -67,13 +68,11 @@ private:
   // Memory pool of linked list pointers
   LockRequestLinkedList* list_array;
 
-  // Memory pool of TNodes
-  TNode<LockRequest>* memory_array;
-  TNode<LockRequest>* memory_ptr;
-
   // Bucket locks.
   pthread_mutex_t* lock_array;
-  pthread_mutex_t global_lock;
+
+  // Lock Pool
+  LockPool * lock_pool;
 };
 
 #endif
