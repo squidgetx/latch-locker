@@ -1,7 +1,5 @@
 #include <cstdint>
 
-#include "util/util.h"
-
 #include "LockRequestLinkedList.h"
 
 LockRequestLinkedList::LockRequestLinkedList(LockPool * lock_pool, int init_mem) {
@@ -10,7 +8,7 @@ LockRequestLinkedList::LockRequestLinkedList(LockPool * lock_pool, int init_mem)
   this->lock_pool = lock_pool;
   memory_list = new TLinkedList<MemoryChunk<TNode<LockRequest> > >();
   MemoryChunk<TNode<LockRequest> > * init_chunk = lock_pool->get_uninit_locks(init_mem);
-  TNode<MemoryChunk<TNode<LockRequest>>> * init_node = new TNode<MemoryChunk<TNode<LockRequest> > >(*init_chunk);
+  TNode<MemoryChunk<TNode<LockRequest> > > * init_node = new TNode<MemoryChunk<TNode<LockRequest> > >(*init_chunk);
   size_to_req = 2*init_mem;
   memory_list->append(init_node);
 }
@@ -68,11 +66,7 @@ TNode<LockRequest> * LockRequestLinkedList::createRequest(LockRequest lr) {
   // If the local memory pool is empty, get more from the global pool
   if (memory_list->head == NULL)
   {
-    pthread_mutex_lock(global_lock);
-    MemoryChunk<TNode<LockRequest> > new_chunk(*global_array_ptr,size_to_req);
-    *global_array_ptr += size_to_req;
-    pthread_mutex_unlock(global_lock);
-    TNode<MemoryChunk<TNode<LockRequest> > >* new_node = new TNode<MemoryChunk<TNode<LockRequest> > >(new_chunk);
+    TNode<MemoryChunk<TNode<LockRequest> > >* new_node = new TNode<MemoryChunk<TNode<LockRequest> > >(*lock_pool->get_uninit_locks(size_to_req));
     memory_list->append(new_node);
   }
 

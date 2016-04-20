@@ -21,7 +21,7 @@ Hashtable::Hashtable(int n) {
   //
   for (int i = 0; i < num_buckets*DEFAULT_BUCKET_SIZE; i++)
   {
-    list_array[i] = new LockRequestLinkedList(lock_pool, DEFAULT_LIST_SIZE);
+    list_array[i] = *(new LockRequestLinkedList(lock_pool, DEFAULT_LIST_SIZE));
   }
 
   // For every bucket, initialize its lock and distribute the LockRequestLinkedList objects

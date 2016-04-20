@@ -4,8 +4,8 @@
 #include <pthread.h>
 #include "TLinkedList.h"
 #include "lock_pool.h"
-
-#include "../lock_request.h"
+#include "util/util.h"
+#include "lock_request.h"
 
 #define DEFAULT_LIST_SIZE 5
 

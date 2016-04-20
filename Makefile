@@ -2,7 +2,7 @@ CXX=g++
 CXXFLAGS=-g --std=c++11 -I$(CURDIR)
 
 DIRS=util lock_managers hashtable tester
-SOURCES := lock_pool.cc
+SOURCES := 
 BINS :=
 OBJECTS = $(patsubst %.cc, %.o, $(SOURCES))
 
