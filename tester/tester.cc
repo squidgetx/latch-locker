@@ -1,9 +1,16 @@
 #include <iostream>
+#include <sys/time.h>
 #include <cstdlib>
 #include <iterator>
 #include <random>
 
 #include "tester.h"
+
+static inline double GetTime() {
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  return tv.tv_sec + tv.tv_usec/1e6;
+}
 
 Tester::Tester() {
   global_lock_manager = new GlobalLockManager();
