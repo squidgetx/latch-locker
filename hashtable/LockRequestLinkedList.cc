@@ -1,22 +1,16 @@
 #include <cstdint>
 
-#include "util/util.h"
-
 #include "LockRequestLinkedList.h"
 
-LockRequestLinkedList::LockRequestLinkedList(MemoryChunk<TNode<LockRequest> >* init_mem,
-    TNode<LockRequest>* global_array,
-    TNode<LockRequest>** global_array_ptr,
-    pthread_mutex_t* global_lock) {
-
-  this->global_array = global_array;
-  this->global_lock = global_lock;
-  this->global_array_ptr = global_array_ptr;
-  size_to_req = 2*DEFAULT_LIST_SIZE;
-
-  memory_list = new TLinkedList<MemoryChunk<TNode<LockRequest> > >;
-  TNode<MemoryChunk<TNode<LockRequest> > >* init_chunk = new TNode<MemoryChunk<TNode<LockRequest> > >(*init_mem);
-  memory_list->append(init_chunk);
+LockRequestLinkedList::LockRequestLinkedList(LockPool * lock_pool, int init_mem) {
+  // Construct the lockrequestlinkedlist with some initial amount of memory
+  // with a reference to the global lock pool for backup mem
+  this->lock_pool = lock_pool;
+  memory_list = new TLinkedList<MemoryChunk<TNode<LockRequest> > >();
+  MemoryChunk<TNode<LockRequest> > * init_chunk = lock_pool->get_uninit_locks(init_mem);
+  TNode<MemoryChunk<TNode<LockRequest> > > * init_node = new TNode<MemoryChunk<TNode<LockRequest> > >(*init_chunk);
+  size_to_req = 2*init_mem;
+  memory_list->append(init_node);
 }
 
 void LockRequestLinkedList::insertRequest(LockRequest lr)
@@ -72,11 +66,7 @@ TNode<LockRequest> * LockRequestLinkedList::createRequest(LockRequest lr) {
   // If the local memory pool is empty, get more from the global pool
   if (memory_list->head == NULL)
   {
-    pthread_mutex_lock(global_lock);
-    MemoryChunk<TNode<LockRequest> > new_chunk(*global_array_ptr,size_to_req);
-    *global_array_ptr += size_to_req;
-    pthread_mutex_unlock(global_lock);
-    TNode<MemoryChunk<TNode<LockRequest> > >* new_node = new TNode<MemoryChunk<TNode<LockRequest> > >(new_chunk);
+    TNode<MemoryChunk<TNode<LockRequest> > >* new_node = new TNode<MemoryChunk<TNode<LockRequest> > >(*lock_pool->get_uninit_locks(size_to_req));
     memory_list->append(new_node);
   }
 

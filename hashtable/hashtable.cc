@@ -10,11 +10,9 @@ Hashtable::Hashtable(int n) {
   // (nbuckets * bucket size)
   list_array = reinterpret_cast<LockRequestLinkedList*> (new char[sizeof(LockRequestLinkedList)*num_buckets*DEFAULT_BUCKET_SIZE]);
 
-  // Allocate space for the total number of TNodes
-  memory_array = reinterpret_cast<TNode<LockRequest>*> (new char[sizeof(TNode<LockRequest>)*num_buckets*DEFAULT_BUCKET_SIZE*DEFAULT_LIST_SIZE]);
+  // Initialize pool of locks
+  lock_pool = new LockPool(num_buckets * DEFAULT_BUCKET_SIZE * DEFAULT_LIST_SIZE);
 
-  memory_ptr = memory_array;
-  pthread_mutex_init(&global_lock, NULL);
 
   // Initialize bucket/lock arrays
   bucket_array = new Bucket[num_buckets];
@@ -22,10 +20,10 @@ Hashtable::Hashtable(int n) {
 
   // For every key initialize its LockRequestLinkedList object
   // as well the initial number of lock requests given to it
+  //
   for (int i = 0; i < num_buckets*DEFAULT_BUCKET_SIZE; i++)
   {
-    MemoryChunk<TNode<LockRequest> > mem(&memory_array[DEFAULT_LIST_SIZE*i], DEFAULT_LIST_SIZE);
-    new (&list_array[i]) LockRequestLinkedList(&mem, memory_array, &memory_ptr, &global_lock);
+    list_array[i] = *(new LockRequestLinkedList(lock_pool, DEFAULT_LIST_SIZE));
   }
 
   // For every bucket, initialize its lock and distribute the LockRequestLinkedList objects
