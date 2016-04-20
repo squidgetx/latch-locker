@@ -3,7 +3,7 @@
 
 #include <pthread.h>
 #include "TLinkedList.h"
-#include "../lock_pool.h"
+#include "lock_pool.h"
 
 #include "../lock_request.h"
 
