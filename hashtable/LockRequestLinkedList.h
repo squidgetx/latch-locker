@@ -19,6 +19,7 @@ public:
   TNode<LockRequest> * latch_free_next(TNode<LockRequest> * req);
   using TLinkedList<LockRequest>::head;
   using TLinkedList<LockRequest>::tail;
+  using TLinkedList<LockRequest>::empty;
 private:
   TNode<LockRequest> * createRequest(LockRequest lr);
   void restoreChunk(TNode<LockRequest>* lr);

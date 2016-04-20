@@ -12,20 +12,21 @@ public:
   TNode<T>* tail;
   int isize;
 
-  TLinkedList() 
-  {
+  TLinkedList() {
     head = NULL;
     tail = NULL;
     isize = 0;
   }
 
-
   void append(TNode<T> *n);
   void prepend(TNode<T> *n);
-
   void remove(TNode<T> *n);
   int size();
 
+  /**
+   * @return True if the list is empty.
+   */
+  bool empty();
 };
 
 template <class T>
@@ -71,6 +72,11 @@ void TLinkedList<T>::remove(TNode<T> *n) {
 template <class T>
 int TLinkedList<T>::size() {
   return isize;
+}
+
+template <class T>
+int TLinkedList<T>::empty() {
+  return head == tail;
 }
 
 #endif
