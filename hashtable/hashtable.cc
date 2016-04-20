@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include "hashtable.h"
+#include "util/common.h"
 
 Hashtable::Hashtable(int n) {
   num_buckets = n;
@@ -40,11 +41,11 @@ Hashtable::Hashtable(int n) {
   }
 }
 
-int Hashtable::hash(int key) {
+int Hashtable::hash(Key key) {
   return key % num_buckets;
 }
 
-void Hashtable::lock_insert(int key, LockRequest& lr) {
+void Hashtable::lock_insert(Key key, LockRequest& lr) {
   int b_index = hash(key);
   int i;
   pthread_mutex_lock(&lock_array[b_index]);
@@ -67,7 +68,7 @@ void Hashtable::lock_insert(int key, LockRequest& lr) {
   pthread_mutex_unlock(&lock_array[b_index]);
 }
 
-LockRequestLinkedList * Hashtable::latch_free_get_list(int key) {
+LockRequestLinkedList * Hashtable::latch_free_get_list(Key key) {
   int b_index = hash(key);
   int i;
   try {
@@ -84,7 +85,7 @@ LockRequestLinkedList * Hashtable::latch_free_get_list(int key) {
   return bucket_array[b_index].slots[i];
 }
 
-void Hashtable::lock_delete(int key, TNode<LockRequest>* lr)
+void Hashtable::lock_delete(Key key, TNode<LockRequest>* lr)
 {
   int b_index = key % num_buckets;
   int i;
@@ -104,7 +105,7 @@ void Hashtable::lock_delete(int key, TNode<LockRequest>* lr)
   pthread_mutex_unlock(&lock_array[b_index]);
 }
 
-pthread_mutex_t* Hashtable::get_mutex(int key)
+pthread_mutex_t* Hashtable::get_mutex(Key key)
 {
   int b_index = key % num_buckets;
   int i;

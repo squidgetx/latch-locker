@@ -5,8 +5,7 @@
 #include <new>
 
 #include "LockRequestLinkedList.h"
-
-
+#include "util/common.h"
 
 #define DEFAULT_BUCKET_SIZE 5
 
@@ -40,24 +39,24 @@ public:
   /**
    * Insert a lock request @lr into the table for @key.
    */
-  void lock_insert(int key, LockRequest& lr);
+  void lock_insert(Key key, LockRequest& lr);
 
   /**
    * Get a reference to the lock request list for @key.
    */
-  LockRequestLinkedList * latch_free_get_list(int key);
+  LockRequestLinkedList * latch_free_get_list(Key key);
 
   /**
    * Remove a lock request @lr from @key
    */
-  void lock_delete(int key, TNode<LockRequest>* lr);
+  void lock_delete(Key key, TNode<LockRequest>* lr);
 
   /**
    * Get the mutex protecting a particular key
    */
-  pthread_mutex_t* get_mutex(int key);
+  pthread_mutex_t* get_mutex(Key key);
 private:
-  inline int hash(int key);
+  inline int hash(Key key);
 
   int num_buckets;
 
