@@ -1,4 +1,4 @@
-#include "lock_manager.h"
+#include "latch_free_lock_manager.h"
 
 #define MODULUS 5
 

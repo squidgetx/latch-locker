@@ -1,10 +1,15 @@
+#include "tester.h"
+
 #include <iostream>
 #include <sys/time.h>
 #include <cstdlib>
 #include <iterator>
 #include <random>
 
-#include "tester.h"
+#include "lock_managers/global_lock_manager.h"
+#include "util/common.h"
+#include "txn.h"
+#include "lock_request.h"
 
 static inline double GetTime() {
   struct timeval tv;

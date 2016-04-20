@@ -1,3 +1,6 @@
+#ifndef TESTER_TESTER_H
+#define TESTER_TESTER_H
+
 #include <vector>
 #include <utility>
 
@@ -10,8 +13,6 @@ class Tester {
 public:
   Tester();
   void Run();
-
-
 private:
   // one LockRequest Sequence
   void Benchmark(std::vector<std::pair<Key, LockRequest>> lock_requests);
@@ -21,5 +22,6 @@ private:
   GlobalLockManager global_lock_manager;
   // LatchedLockManager *latched_lock_manager;
   // LatchFreeLockManager *latchfree_lock_manager;
-
 };
+
+#endif // TESTER_TESTER_H

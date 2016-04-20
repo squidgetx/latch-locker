@@ -7,12 +7,12 @@
 #include <unordered_map>
 #include <pthread.h>
 
-#include "../util/common.h"
-#include "../hashtable/LockRequestLinkedList.h"
-#include "../hashtable/hashtable.h"
+#include "util/common.h"
+#include "hashtable/LockRequestLinkedList.h"
+#include "hashtable/hashtable.h"
 
-#include "../lock_request.h"
-#include "../txn.h"
+#include "lock_request.h"
+#include "txn.h"
 
 using std::deque;
 using std::unordered_map;

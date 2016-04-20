@@ -1,5 +1,6 @@
-#include "hashtable.h"
 #include <iostream>
+
+#include "hashtable.h"
 
 Hashtable::Hashtable(int n) {
   num_buckets = n;

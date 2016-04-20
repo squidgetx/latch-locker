@@ -1,7 +1,7 @@
 #include <iostream>
 
 #include "hashtable.h"
-#include "../lock_request.h"
+#include "lock_request.h"
 
 int main()
 {
