@@ -12,7 +12,7 @@ Tester::Tester() {
 
 // run different tests
 void Tester::Run() {
-  std::vector<LockRequest> lock_requests;
+  std::vector<std::pair<Key, LockRequest>> lock_requests;
 
   int n = 10000; // number of lock requests
   int k = 10; // number of distinct keys
@@ -24,22 +24,21 @@ void Tester::Run() {
 
 }
 
-std::vector<LockRequest> Tester::GenerateRequests(int n, int k, double w) {
-  std::vector<LockRequest> lock_requests;
+std::vector<std::pair<Key, LockRequest>> Tester::GenerateRequests(int n, int k, double w) {
+  std::vector<std::pair<Key, LockRequest>> lock_requests;
 
   for (int i = 0; i < n; i++) {
     Txn txn = Txn();
     Key key = 1 + (rand() % (int)k);
-    LockMode mode = (((double) rand() / (RAND_MAX)) <= w) ? EXCLUSIVE : SHARED;   
+    LockMode mode = (((double) rand() / (RAND_MAX)) <= w) ? EXCLUSIVE : SHARED;
     LockRequest r = LockRequest(mode, &txn);
-    r.key_ = key;
-    lock_requests.push_back(r);
+    lock_requests.push_back(std::make_pair(key, r));
   }
 
   return lock_requests;
 }
 
-void Tester::Benchmark(std::vector<LockRequest> lock_requests) {
+void Tester::Benchmark(std::vector<std::pair<Key, LockRequest> > lock_requests) {
   LockManager *lm;
   // three types of mgr_s
   for (int i = 0; i < 3; i++) {
@@ -62,12 +61,13 @@ void Tester::Benchmark(std::vector<LockRequest> lock_requests) {
     double start = GetTime();
 
     // acquire phase
-    for(std::vector<LockRequest>::iterator it = lock_requests.begin(); it != lock_requests.end(); ++it) {
-      LockRequest r = *it;
+    for(std::vector<std::pair<Key, LockRequest>>::iterator it = lock_requests.begin(); it != lock_requests.end(); ++it) {
+      Key k = it->first;
+      LockRequest r = it->second;
       if (r.mode_ == SHARED) {
-        lm->ReadLock(r.txn_, r.key_);
+        lm->ReadLock(r.txn_, k);
       } else if (r.mode_ == EXCLUSIVE) {
-        lm->WriteLock(r.txn_, r.key_);
+        lm->WriteLock(r.txn_, k);
       }
     }
 
@@ -78,9 +78,10 @@ void Tester::Benchmark(std::vector<LockRequest> lock_requests) {
 
     start = GetTime();
     // release phase
-    for(std::vector<LockRequest>::iterator it = lock_requests.begin(); it != lock_requests.end(); ++it) {
-      LockRequest r = *it;
-      lm->Release(r.txn_, r.key_);
+    for(std::vector<std::pair<Key, LockRequest>>::iterator it = lock_requests.begin(); it != lock_requests.end(); ++it) {
+      Key k = it->first;
+      LockRequest r = it->second;
+      lm->Release(r.txn_, k);
     }
     end = GetTime();
 
