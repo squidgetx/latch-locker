@@ -14,7 +14,6 @@
 #include "../lock_request.h"
 #include "../txn.h"
 
-
 using std::deque;
 using std::unordered_map;
 
@@ -59,50 +58,6 @@ class LockManager {
 
   unordered_map<Key, deque<LockRequest>*> lock_table_;
 
-};
-
-// Version of the LockManager using a global mutex
-class KeyLockManager : public LockManager {
- public:
-  explicit KeyLockManager();
-  inline virtual ~KeyLockManager() {}
-
-  virtual bool ReadLock(Txn* txn, const Key key);
-  virtual bool WriteLock(Txn* txn, const Key key);
-  virtual void Release(Txn* txn, const Key key);
-  //virtual LockMode Status(const Key& key, vector<int>* owners);
- protected:
-  Pthread_mutex table_mutex;
-
-};
-
-// Version of the LockManager using a global mutex
-class GlobalLockManager : public LockManager {
- public:
-  explicit GlobalLockManager();
-  inline virtual ~GlobalLockManager() {}
-
-  virtual bool ReadLock(Txn* txn, const Key key);
-  virtual bool WriteLock(Txn* txn, const Key key);
-  virtual void Release(Txn* txn, const Key key);
-  //virtual LockMode Status(const Key& key, vector<int>* owners);
- protected:
-  Pthread_mutex table_mutex;
-
-};
-
-// Version of the lock manager using the latch free algorithm
-class LatchFreeLockManager : public LockManager {
-  public:
-    explicit LatchFreeLockManager();
-    inline virtual ~LatchFreeLockManager() {}
-
-    virtual bool ReadLock(Txn* txn, const Key key);
-    virtual bool WriteLock(Txn* txn, const Key key);
-    virtual void Release(Txn* txn, const Key key);
-
-  private:
-    Hashtable table;
 };
 
 #endif  // _LOCK_MANAGER_H_
