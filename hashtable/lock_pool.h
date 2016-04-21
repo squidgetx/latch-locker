@@ -9,8 +9,7 @@ class LockPool
 {
 public:
   LockPool(int n);
-  TNode<LockRequest>* get_uninit_lock();
-  MemoryChunk<TNode<LockRequest> > * get_uninit_locks(int n);
+  MemoryChunk<TNode<LockRequest>> * get_uninit_locks(int n);
 
 private:
   TNode<LockRequest>* memory_array;

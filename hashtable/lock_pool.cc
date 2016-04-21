@@ -8,15 +8,6 @@ LockPool::LockPool(int n) {
   pthread_mutex_init(&pool_mutex, NULL);
 }
 
-TNode<LockRequest> * LockPool::get_uninit_lock() {
-  pthread_mutex_lock(&pool_mutex);
-  TNode<LockRequest> * req = memory_ptr;
-  memory_ptr++;
-  // unlock
-  pthread_mutex_unlock(&pool_mutex);
-  return req;
-}
-
 MemoryChunk<TNode<LockRequest> > * LockPool::get_uninit_locks(int n) {
   // Get a chunk of n lock requests
   pthread_mutex_lock(&pool_mutex);
