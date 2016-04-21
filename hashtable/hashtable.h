@@ -56,6 +56,8 @@ public:
    */
   void unlock(Key key);
 
+  Pthread_mutex mutex(const Key key);
+
   /**
    * Remove a lock request @lr from @key
    */

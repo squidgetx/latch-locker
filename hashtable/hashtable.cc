@@ -96,14 +96,20 @@ LockRequestLinkedList * Hashtable::get_list(Key key) {
 
 void Hashtable::lock(Key key) {
   // get the latch on the bucket
-  int b_index = key % num_buckets;
+  int b_index = hash(key);
   pthread_mutex_lock(&lock_array[b_index]);
 }
 
 void Hashtable::unlock(Key key) {
-  int b_index = key % num_buckets;
+  int b_index = hash(key);
   pthread_mutex_unlock(&lock_array[b_index]);
 }
+
+Pthread_mutex Hashtable::mutex(const Key key) {
+  int b_index = hash(key);
+  return Pthread_mutex(&lock_array[b_index]);
+}
+
 /*
 void Hashtable::lock_delete(Key key, TNode<LockRequest>* lr)
 {
