@@ -94,3 +94,17 @@ void LockRequestLinkedList::restoreChunk(TNode<LockRequest>* lr) {
   memory_list->append(new_node);
 }
 
+void LockRequestLinkedList::printList() {
+  // print the list for debugging purposes
+  std::cout << "   <\n";
+  for(TNode<LockRequest> * node = head; node != NULL; node = node->next) {
+    LockRequest lr = node->data;
+    std::cout << "     Txn " << lr.txn_->txn_id;
+    if (lr.mode_ == EXCLUSIVE) {
+      std::cout << "EXCLUSIVE\n";
+    } else {
+      std::cout << "SHARED\n";
+    }
+  }
+  std::cout << "   >\n";
+}

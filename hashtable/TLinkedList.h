@@ -38,6 +38,7 @@ void TLinkedList<T>::append(TNode<T> *n) {
   } else {
     tail->next = n;
     n->prev = tail;
+    n->next = NULL;
     tail = n;
     isize++;
   }

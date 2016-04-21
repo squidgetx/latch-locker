@@ -38,7 +38,7 @@ std::vector<std::pair<Key, LockRequest>> Tester::GenerateRequests(int n, int k, 
   std::vector<std::pair<Key, LockRequest>> lock_requests;
 
   for (int i = 0; i < n; i++) {
-    Txn txn = Txn();
+    Txn txn = Txn(1);
     Key key = 1 + (rand() % (int)k);
     LockMode mode = (((double) rand() / (RAND_MAX)) <= w) ? EXCLUSIVE : SHARED;
     LockRequest r = LockRequest(mode, &txn);

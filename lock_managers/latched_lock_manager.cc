@@ -7,31 +7,25 @@ bool LatchedLockManager::WriteLock(Txn* txn, const Key key) {
   Pthread_mutex_guard guard(KeyMutex(key));
 
   // add the lock to the queue
-  LockRequest newreq = LockRequest(SHARED, txn);
+  LockRequest newreq = LockRequest(EXCLUSIVE, txn);
   LockRequestLinkedList *list = lock_table.get_list(key);
 
-  newreq.state_ = ACTIVE;
+  newreq.state_ = WAIT;
   // See if we can get this lock immediately or not
-  // If the queue is empty then yea
-  if (!list->empty()) {
-    // If the queue only contains shared locks then we
-    // can also get the lock right away
-    for (TNode<LockRequest>* node = list->head; node != NULL; node = node->next) {
-      const LockRequest ilr = node->data;
-      if (ilr.mode_ != SHARED) {
-        newreq.state_ = WAIT;
-        break;
-      }
-    }
+  // If the queue is empty then we can get it, otherwise must wait
+  if (list->empty()) {
+    newreq.state_ = ACTIVE;
   }
 
   list->insertRequest(newreq);
+
 
   return (newreq.state_ == ACTIVE);
 }
 
 bool LatchedLockManager::ReadLock(Txn* txn, const Key key) {
   Pthread_mutex_guard guard(KeyMutex(key));
+  
 
   // add the lock to the queue
   LockRequest newreq = LockRequest(SHARED, txn);
@@ -48,6 +42,7 @@ bool LatchedLockManager::ReadLock(Txn* txn, const Key key) {
       if (ilr.mode_ != SHARED) {
         newreq.state_ = WAIT;
         break;
+      } else {
       }
     }
   }
@@ -65,6 +60,7 @@ void LatchedLockManager::Release(Txn* txn, const Key key) {
     // don't bother releasing non existent lock
     return;
   }
+
 
   // First find the txn in the lock request list
   TNode<LockRequest> * current;

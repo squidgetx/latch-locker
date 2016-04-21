@@ -17,6 +17,7 @@ public:
   void deleteRequest(TNode<LockRequest>* lr);
   void atomic_lock_insert(LockRequest lr);
   TNode<LockRequest> * latch_free_next(TNode<LockRequest> * req);
+  void printList();
   using TLinkedList<LockRequest>::head;
   using TLinkedList<LockRequest>::tail;
   using TLinkedList<LockRequest>::empty;
