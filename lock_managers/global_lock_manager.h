@@ -1,20 +1,18 @@
 #ifndef LOCK_MANAGERS_GLOBAL_LOCK_MANAGER_H
 #define LOCK_MANAGERS_GLOBAL_LOCK_MANAGER_H
 
-#include "lock_manager.h"
+#include "lock_managers/latched_lock_manager.h"
 
 #include "txn.h"
 #include "util/mutex.h"
 
 // Version of the LockManager using a global mutex
-class GlobalLockManager : public LockManager {
+class GlobalLockManager : public LatchedLockManager {
  public:
-  explicit GlobalLockManager();
+  explicit GlobalLockManager(int nbuckets) : LatchedLockManager(nbuckets) {}
   inline virtual ~GlobalLockManager() {}
 
-  virtual bool ReadLock(Txn* txn, const Key key);
-  virtual bool WriteLock(Txn* txn, const Key key);
-  virtual void Release(Txn* txn, const Key key);
+  Pthread_mutex KeyMutex(const Key key);
   //virtual LockMode Status(const Key& key, vector<int>* owners);
  protected:
   Pthread_mutex table_mutex;

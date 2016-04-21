@@ -1,21 +1,19 @@
 #ifndef _KEYLOCK_MANAGER_H_
 #define _KEYLOCK_MANAGER_H_
 
-#include "lock_manager.h"
+#include "lock_managers/latched_lock_manager.h"
+
+#include "util/common.h"
+#include "util/mutex.h"
 
 // Version of the LockManager using a global mutex
-class KeyLockManager : public LockManager {
+class KeyLockManager : public LatchedLockManager {
  public:
-  explicit KeyLockManager(int nbuckets);
+  explicit KeyLockManager(int nbuckets) : LatchedLockManager(nbuckets) {}
   inline virtual ~KeyLockManager() {}
 
-  virtual bool ReadLock(Txn* txn, const Key key);
-  virtual bool WriteLock(Txn* txn, const Key key);
-  virtual void Release(Txn* txn, const Key key);
+  Pthread_mutex KeyMutex(const Key key);
   //virtual LockMode Status(const Key& key, vector<int>* owners);
- protected:
-  Hashtable hashtable;
-
 };
 
 #endif

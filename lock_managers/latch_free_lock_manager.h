@@ -4,15 +4,12 @@
 // Version of the lock manager using the latch free algorithm
 class LatchFreeLockManager : public LockManager {
   public:
-    explicit LatchFreeLockManager();
+    explicit LatchFreeLockManager() : LockManager(int nbuckets);
     inline virtual ~LatchFreeLockManager() {}
 
     virtual bool ReadLock(Txn* txn, const Key key);
     virtual bool WriteLock(Txn* txn, const Key key);
     virtual void Release(Txn* txn, const Key key);
-
-  private:
-    Hashtable table;
 };
 
 #endif
