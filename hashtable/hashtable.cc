@@ -37,6 +37,16 @@ Hashtable::Hashtable(int n) {
       bucket_array[i].keys[j] = -1;
     }
   }
+  // distribute keys
+  for(int i = 0 ; i < num_buckets * DEFAULT_BUCKET_SIZE; i++) {
+    for(int j = 0; j < DEFAULT_BUCKET_SIZE; j++) {
+      if (bucket_array[hash(i)].keys[j] == -1) {
+        //std::cout << "placing key " << i << "in bucket " << hash(i) << "\n";
+        bucket_array[hash(i)].keys[j] = i;
+        break;
+      }
+    }
+  }
 }
 
 int Hashtable::hash(Key key) {
