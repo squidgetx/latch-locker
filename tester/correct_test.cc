@@ -51,7 +51,7 @@ void CorrectTester::Run() {
   for (int i = 0; i < 1; i++) {
     switch(i) {
       case 0:
-        lm = new GlobalLockManager();
+        lm = new GlobalLockManager(100);
         break;
       //case 1:
         //lm = new LatchFreeLockManager();
