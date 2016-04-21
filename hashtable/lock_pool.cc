@@ -1,6 +1,6 @@
 #include "lock_pool.h"
 
-LockPool::LockPool(int n) {
+LockPool::LockPool(int n) : capacity(n) {
   // For now, we just use a giant array
   memory_array = reinterpret_cast<TNode<LockRequest>*> (new char[
       sizeof(TNode<LockRequest>)*n]);
@@ -11,8 +11,15 @@ LockPool::LockPool(int n) {
 MemoryChunk<TNode<LockRequest> > * LockPool::get_uninit_locks(int n) {
   // Get a chunk of n lock requests
   pthread_mutex_lock(&pool_mutex);
+  if (capacity - n < 0) {
+    std::cerr << "Global lock pool out of mem\n";
+    return NULL;
+  }
+  capacity -= n;
+
+
   MemoryChunk<TNode<LockRequest> > * mem = new MemoryChunk<TNode<LockRequest> >(memory_ptr, n);
   memory_ptr += n;
-  pthread_mutex_unlock(&pool_mutex);
+    pthread_mutex_unlock(&pool_mutex);
   return mem;
 }

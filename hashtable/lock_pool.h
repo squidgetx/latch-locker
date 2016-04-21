@@ -4,6 +4,7 @@
 #include "lock_request.h"
 #include "hashtable/TLinkedList.h"
 #include "hashtable/TNode.h"
+#include <iostream>
 
 class LockPool
 {
@@ -15,6 +16,7 @@ private:
   TNode<LockRequest>* memory_array;
   TNode<LockRequest>* memory_ptr;
   pthread_mutex_t pool_mutex;
+  int capacity;
 };
 
 

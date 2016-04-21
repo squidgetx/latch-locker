@@ -76,7 +76,7 @@ int TLinkedList<T>::size() {
 
 template <class T>
 bool TLinkedList<T>::empty() {
-  return head == tail;
+  return isize == 0;
 }
 
 #endif

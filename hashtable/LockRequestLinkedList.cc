@@ -66,17 +66,21 @@ TNode<LockRequest> * LockRequestLinkedList::createRequest(LockRequest lr) {
   // If the local memory pool is empty, get more from the global pool
   if (memory_list->head == NULL)
   {
+   // std::cout << "local pool empty, requesting " << size_to_req << "\n";
     TNode<MemoryChunk<TNode<LockRequest> > >* new_node = new TNode<MemoryChunk<TNode<LockRequest> > >(*lock_pool->get_uninit_locks(size_to_req));
     memory_list->append(new_node);
+  } else {
+   // std::cout << "local pool head node has " << memory_list->head->data.size << " blocks free!\n";
+
   }
 
   TNode<LockRequest> * node = memory_list->head->data.loc;
   memory_list->head->data.size--;
+  memory_list->head->data.loc+=1;
   if (memory_list->head->data.size == 0)
   {
     memory_list->remove(memory_list->head);
   }
-  memory_list->head->data.loc+=1;
   node->data.txn_ = lr.txn_;
   node->data.mode_ = lr.mode_;
   return node;
