@@ -22,3 +22,5 @@ class CorrectTester {
     void SimpleLocking(LockManager * lm);
 
 };
+
+#endif
