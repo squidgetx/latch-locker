@@ -6,6 +6,7 @@
 
 #include "LockRequestLinkedList.h"
 #include "util/common.h"
+#include "util/mutex.h"
 
 #define DEFAULT_BUCKET_SIZE 5
 
@@ -56,6 +57,8 @@ public:
    */
   void unlock(Key key);
 
+  Pthread_mutex mutex(const Key key);
+
   /**
    * Remove a lock request @lr from @key
    */
@@ -77,7 +80,7 @@ private:
   LockRequestLinkedList* list_array;
 
   // Bucket locks.
-  pthread_mutex_t* lock_array;
+  Pthread_mutex* lock_array;
 
   // Lock Pool
   LockPool * lock_pool;

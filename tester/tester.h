@@ -17,11 +17,6 @@ private:
   // one LockRequest Sequence
   void Benchmark(std::vector<std::pair<Key, LockRequest>> lock_requests);
   std::vector<std::pair<Key, LockRequest>> GenerateRequests(int n, int k, double w);
-
-
-  GlobalLockManager global_lock_manager;
-  // LatchedLockManager *latched_lock_manager;
-  // LatchFreeLockManager *latchfree_lock_manager;
 };
 
 #endif // TESTER_TESTER_H

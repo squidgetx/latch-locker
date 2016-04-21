@@ -24,23 +24,24 @@ public:
     pthread_mutex_unlock(&mutex_handle);
   }
 private:
+  // Wow this is janky.
   pthread_mutex_t mutex_handle;
 };
 
 /**
- * RAII lock, based on Pthread_mutex
+ * RAII guard, based on Pthread_mutex
  */
-class Pthread_mutex_lock {
+class Pthread_mutex_guard {
 public:
-  Pthread_mutex_lock(Pthread_mutex mutex) : mutex(mutex) {
+  Pthread_mutex_guard(Pthread_mutex mutex) : mutex(mutex) {
     mutex.lock();
   }
 
-  ~Pthread_mutex_lock() {
+  ~Pthread_mutex_guard() {
     mutex.unlock();
   }
 
-  Pthread_mutex_lock operator=(const Pthread_mutex_lock& rhs) = delete;
+  Pthread_mutex_guard& operator=(const Pthread_mutex_guard& rhs) = delete;
 private:
   Pthread_mutex mutex;
 };

@@ -3,8 +3,6 @@
 #ifndef _LOCK_MANAGER_H_
 #define _LOCK_MANAGER_H_
 
-#include <deque>
-#include <unordered_map>
 #include <pthread.h>
 
 #include "util/common.h"
@@ -14,11 +12,10 @@
 #include "lock_request.h"
 #include "txn.h"
 
-using std::deque;
-using std::unordered_map;
-
+// The number of buckets lock managers allocate in their hash tables.
 class LockManager {
  public:
+  LockManager(int nbuckets) : lock_table(nbuckets) {}
   virtual ~LockManager() {}
 
   // Attempts to grant a read lock to the specified transaction, enqueueing
@@ -55,9 +52,7 @@ class LockManager {
  protected:
   // List is a placeholder for linked list structure we will define later
   // also unordered map will be later implemented
-
-  unordered_map<Key, deque<LockRequest>*> lock_table_;
-
+  Hashtable lock_table;
 };
 
 #endif  // _LOCK_MANAGER_H_
