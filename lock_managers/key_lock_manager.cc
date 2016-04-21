@@ -113,7 +113,7 @@ void KeyLockManager::Release(Txn* txn, const Key key) {
 
   } else {
     // Just grant to the lock to this request (exclusive lock)
-    next->state_ = ACTIVE;
+    next->data.state_ = ACTIVE;
   }
 
   hashtable.unlock(key);

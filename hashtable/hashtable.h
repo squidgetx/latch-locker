@@ -49,12 +49,12 @@ public:
   /**
    * Lock the bucket corresponding to Key key
    */
-  inline void lock(Key key);
+  void lock(Key key);
 
   /**
    * Unlock the bucket corresponding to Key key
    */
-  inline void unlock(Key key);
+  void unlock(Key key);
 
   /**
    * Remove a lock request @lr from @key
