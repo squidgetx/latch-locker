@@ -1,9 +1,6 @@
 #include "key_lock_manager.h"
 
-KeyLockManager::KeyLockManager(int nbuckets) {
-  hashtable = *(new Hashtable(nbuckets));
-
-
+KeyLockManager::KeyLockManager(int nbuckets) : hashtable(nbuckets) {
 }
 
 bool KeyLockManager::WriteLock(Txn* txn, const Key key) {
