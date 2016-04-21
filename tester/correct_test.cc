@@ -49,22 +49,24 @@ void CorrectTester::Run() {
   // Test the global lcok manager
   // three types of mgr_s
   LockManager * lm;
-  for (int i = 0; i < 1; i++) {
+  for (int i = 0; i < 2; i++) {
     switch(i) {
       case 0:
         lm = new GlobalLockManager(100);
+        std::cout << "** Global Manager **\n";
         break;
-      //case 1:
-        //lm = new LatchFreeLockManager();
-        //break;
+      case 1:
+        lm = new KeyLockManager(100);
+        std::cout << "** Key Lock Manager **\n";
+        break;
       //case 2:
         //lm = new LatchFreeLockManager();
         //break;
       default:
         break;
     }
+    SimpleLocking(lm);
   }
-  SimpleLocking(lm);
   
 
 }

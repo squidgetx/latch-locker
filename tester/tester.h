@@ -5,6 +5,7 @@
 #include <utility>
 
 #include "lock_managers/global_lock_manager.h"
+#include "lock_managers/key_lock_manager.h"
 #include "util/common.h"
 #include "txn.h"
 #include "lock_request.h"
