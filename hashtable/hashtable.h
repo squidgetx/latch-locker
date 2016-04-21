@@ -6,6 +6,7 @@
 
 #include "LockRequestLinkedList.h"
 #include "util/common.h"
+#include "util/mutex.h"
 
 #define DEFAULT_BUCKET_SIZE 5
 
@@ -79,7 +80,7 @@ private:
   LockRequestLinkedList* list_array;
 
   // Bucket locks.
-  pthread_mutex_t* lock_array;
+  Pthread_mutex* lock_array;
 
   // Lock Pool
   LockPool * lock_pool;

@@ -16,7 +16,7 @@ Hashtable::Hashtable(int n) {
 
   // Initialize bucket/lock arrays
   bucket_array = new Bucket[num_buckets];
-  lock_array = new pthread_mutex_t[num_buckets];
+  lock_array = new Pthread_mutex[num_buckets];
 
   // For every key initialize its LockRequestLinkedList object
   // as well the initial number of lock requests given to it
@@ -30,7 +30,7 @@ Hashtable::Hashtable(int n) {
   // to each bucket
   for (int i = 0; i < num_buckets; i++)
   {
-    pthread_mutex_init(&lock_array[i], NULL);
+    new (&lock_array[i]) Pthread_mutex();
     for (int j = 0; j < DEFAULT_BUCKET_SIZE; j++)
     {
       bucket_array[i].slots[j] = &list_array[i*DEFAULT_BUCKET_SIZE + j];
@@ -97,17 +97,17 @@ LockRequestLinkedList * Hashtable::get_list(Key key) {
 void Hashtable::lock(Key key) {
   // get the latch on the bucket
   int b_index = hash(key);
-  pthread_mutex_lock(&lock_array[b_index]);
+  lock_array[b_index].lock();
 }
 
 void Hashtable::unlock(Key key) {
   int b_index = hash(key);
-  pthread_mutex_unlock(&lock_array[b_index]);
+  lock_array[b_index].unlock();
 }
 
 Pthread_mutex Hashtable::mutex(const Key key) {
   int b_index = hash(key);
-  return Pthread_mutex(&lock_array[b_index]);
+  return lock_array[b_index];
 }
 
 /*
