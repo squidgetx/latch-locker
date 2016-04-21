@@ -12,26 +12,20 @@
  */
 class Pthread_mutex {
 public:
-  Pthread_mutex() : mutex_handle(&mutex_val) {
-    pthread_mutex_init(mutex_handle, NULL);
-  }
-
-  Pthread_mutex(pthread_mutex_t *handle) : mutex_handle(handle) {
+  Pthread_mutex() {
+    pthread_mutex_init(&mutex_handle, NULL);
   }
 
   void lock() {
-    pthread_mutex_lock(mutex_handle);
+    pthread_mutex_lock(&mutex_handle);
   }
 
   void unlock() {
-    pthread_mutex_unlock(mutex_handle);
+    pthread_mutex_unlock(&mutex_handle);
   }
 private:
   // Wow this is janky.
-  pthread_mutex_t *mutex_handle;
-
-  // When we are just initialized
-  pthread_mutex_t mutex_val;
+  pthread_mutex_t mutex_handle;
 };
 
 /**
