@@ -1,14 +1,15 @@
 #include "key_lock_manager.h"
 
-KeyLockManager::KeyLockManager() {
+KeyLockManager::KeyLockManager(int nbuckets) {
+  hashtable = *(new Hashtable(nbuckets));
+
 
 }
 
 bool KeyLockManager::WriteLock(Txn* txn, const Key key) {
-  lock_table_.lock(key);
+  hashtable.lock(key);
 
-  deque<LockRequest> * list = lock_table_[key];
-  // For now, assume the entry will always exist
+  LockRequestLinkedList * list = hashtable.get_list(key);
 
   // add the lock to the queue
   LockRequest * newreq = new LockRequest(EXCLUSIVE, txn);
@@ -20,20 +21,20 @@ bool KeyLockManager::WriteLock(Txn* txn, const Key key) {
     newreq->state_ = WAIT;
   }
 
-  list->push_back(*newreq);
+  list->insertRequest(*newreq);
 
-  lock_table.unlock(key);
+  hashtable.unlock(key);
   return wasEmpty;
 }
 
 bool KeyLockManager::ReadLock(Txn* txn, const Key key) {
-  lock_table.lock(key);
+  hashtable.lock(key);
 
-  deque<LockRequest> * list = lock_table_[key];
+  LockRequestLinkedList * list = hashtable.get_list(key);
 
   // add the lock to the queue
   LockRequest * newreq = new LockRequest(SHARED, txn);
-  list->push_back(*newreq);
+  list->insertRequest(*newreq);
 
   newreq->state_ = WAIT;
   // See if we can get this lock immediately or not
@@ -41,8 +42,9 @@ bool KeyLockManager::ReadLock(Txn* txn, const Key key) {
   if (!list->empty()) {
     // If the queue only contains shared locks then we
     // can also get the lock right away
-    for(deque<LockRequest>::iterator i = list->begin(); i != list->end(); i++) {
-      if (i->mode_ != SHARED) {
+    TNode<LockRequest> * node = list->head;
+    for( ; node != NULL; node = node->next) {
+      if (node->data.mode_ != SHARED) {
         newreq->state_ = ACTIVE;
         break;
       }
@@ -50,49 +52,50 @@ bool KeyLockManager::ReadLock(Txn* txn, const Key key) {
   } else {
     newreq->state_ = ACTIVE;
   }
-  table_mutex.unlock();
+  hashtable.unlock(key);
 
   return (newreq->state_ == ACTIVE);
 }
 
 
 void KeyLockManager::Release(Txn* txn, const Key key) {
-  table_mutex.lock();
+  hashtable.lock(key);
 
-  deque<LockRequest> * list = lock_table_[key];
+  LockRequestLinkedList * list = hashtable.get_list(key);
   if (list == NULL || list->empty()) {
     // don't bother releasing non existent lock
-    table_mutex.unlock();
+    hashtable.unlock(key);
     return;
   }
 
   // First find the txn in the lock request list
-  deque<LockRequest>::iterator current;
-  for(current = list->begin(); current != list->end(); current++) {
-    if (current->txn_ == txn) {
+  TNode<LockRequest> * current;
+  for(current = list->head; current != NULL; current = current->next) {
+    if (current->data.txn_ == txn) {
       break;
     }
   }
 
-  if (current == list->end()) {
+  if (current == NULL) {
     // abort if the txn doesn't have a lock on this item
-    table_mutex.unlock();
+    hashtable.unlock(key);
     return;
   }
 
-  int mode = current->mode_;
-  deque<LockRequest>::iterator next = list->erase(current);
+  int mode = current->data.mode_;
+  TNode<LockRequest> * next = current->next;
+  list->deleteRequest(current);
 
-  if (next == list->end()) {
+  if (next == NULL) {
     // nothing left to do if no other txns waiting on this lock
-    table_mutex.unlock();
+    hashtable.unlock(key);
     return;
   }
 
   if (mode == SHARED) {
     // don't do anything if you aren't the last shared lock holder
-    if (next->mode_ == SHARED) {
-      table_mutex.unlock();
+    if (next->data.mode_ == SHARED) {
+      hashtable.unlock(key);
       return;
     }
   }
@@ -101,14 +104,14 @@ void KeyLockManager::Release(Txn* txn, const Key key) {
   // a) an EXCLUSIVE lock or
   // b) a SHARED lock, AND the next txn is an EXCLUSIVE lock
 
-  if (next->mode_ == SHARED) {
+  if (next->data.mode_ == SHARED) {
     // Grant the lock to all the locks in this segment waiting for
     // a SHARED lock
-    for(deque<LockRequest>::iterator i = next; i != list->end(); i++) {
-      if (i->mode_ != SHARED) {
+    for( ; next != NULL; next = next->next) {
+      if (next->data.mode_ != SHARED) {
         break;
       }
-      i->state_ = ACTIVE;
+      next->data.state_ = ACTIVE;
     }
 
   } else {
@@ -116,5 +119,5 @@ void KeyLockManager::Release(Txn* txn, const Key key) {
     next->state_ = ACTIVE;
   }
 
-  table_mutex.unlock();
+  hashtable.unlock(key);
 }

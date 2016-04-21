@@ -39,22 +39,32 @@ public:
   /**
    * Insert a lock request @lr into the table for @key.
    */
-  void lock_insert(Key key, LockRequest& lr);
+ // void lock_insert(Key key, LockRequest& lr);
 
   /**
    * Get a reference to the lock request list for @key.
    */
-  LockRequestLinkedList * latch_free_get_list(Key key);
+  LockRequestLinkedList * get_list(Key key);
+
+  /**
+   * Lock the bucket corresponding to Key key
+   */
+  inline void lock(Key key);
+
+  /**
+   * Unlock the bucket corresponding to Key key
+   */
+  inline void unlock(Key key);
 
   /**
    * Remove a lock request @lr from @key
    */
-  void lock_delete(Key key, TNode<LockRequest>* lr);
+ // void lock_delete(Key key, TNode<LockRequest>* lr);
 
   /**
    * Get the mutex protecting a particular key
    */
-  pthread_mutex_t* get_mutex(Key key);
+ // pthread_mutex_t* get_mutex(Key key);
 private:
   inline int hash(Key key);
 

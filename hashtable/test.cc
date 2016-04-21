@@ -5,6 +5,8 @@
 
 int main()
 {
+  /*
+   * TODO refactor this into correctness test for general lock manager
 	std::cout << "output should be\n31\n32\n32\n";
 	std::cout << "beginning test." <<std::endl;
 	Hashtable* hasher = new Hashtable(1000);
@@ -26,4 +28,5 @@ int main()
 		it = it->next;
 	}
 	std::cout << "done table" << std::endl;
+  */
 }

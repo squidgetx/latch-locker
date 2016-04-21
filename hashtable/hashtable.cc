@@ -43,6 +43,7 @@ int Hashtable::hash(Key key) {
   return key % num_buckets;
 }
 
+/*
 void Hashtable::lock_insert(Key key, LockRequest& lr) {
   int b_index = hash(key);
   int i;
@@ -64,9 +65,9 @@ void Hashtable::lock_insert(Key key, LockRequest& lr) {
   }
   bucket_array[b_index].slots[i]->insertRequest(lr);
   pthread_mutex_unlock(&lock_array[b_index]);
-}
+}*/
 
-LockRequestLinkedList * Hashtable::latch_free_get_list(Key key) {
+LockRequestLinkedList * Hashtable::get_list(Key key) {
   int b_index = hash(key);
   int i;
   try {
@@ -83,6 +84,17 @@ LockRequestLinkedList * Hashtable::latch_free_get_list(Key key) {
   return bucket_array[b_index].slots[i];
 }
 
+void Hashtable::lock(Key key) {
+  // get the latch on the bucket
+  int b_index = key % num_buckets;
+  pthread_mutex_lock(&lock_array[b_index]);
+}
+
+void Hashtable::unlock(Key key) {
+  int b_index = key % num_buckets;
+  pthread_mutex_unlock(&lock_array[b_index]);
+}
+/*
 void Hashtable::lock_delete(Key key, TNode<LockRequest>* lr)
 {
   int b_index = key % num_buckets;
@@ -109,6 +121,7 @@ pthread_mutex_t* Hashtable::get_mutex(Key key)
   int i;
   return &lock_array[b_index];
 }
+*/
 
 
 
