@@ -11,7 +11,6 @@ LockRequestLinkedList::LockRequestLinkedList(LockPool * lock_pool, int init_mem)
   TNode<MemoryChunk<TNode<LockRequest> > > * init_node = new TNode<MemoryChunk<TNode<LockRequest> > >(*init_chunk);
   size_to_req = 2*init_mem;
   memory_list->append(init_node);
-  pthread_mutex_init(&janky_mutex, NULL);
 }
 
 void LockRequestLinkedList::insertRequest(LockRequest lr)
@@ -63,7 +62,6 @@ TNode<LockRequest> * LockRequestLinkedList::latch_free_next(TNode<LockRequest>* 
 TNode<LockRequest> * LockRequestLinkedList::createRequest(LockRequest lr) {
   // Get the TNode<LockRequest> from the memory pool associated with this
   // lock request linked list.
-  pthread_mutex_lock(&janky_mutex);
 
   // If the local memory pool is empty, get more from the global pool
   if (memory_list->head == NULL)
@@ -85,7 +83,6 @@ TNode<LockRequest> * LockRequestLinkedList::createRequest(LockRequest lr) {
   }
   node->data.txn_ = lr.txn_;
   node->data.mode_ = lr.mode_;
-  pthread_mutex_unlock(&janky_mutex);
 
   return node;
 }

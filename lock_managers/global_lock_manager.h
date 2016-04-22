@@ -12,7 +12,7 @@ class GlobalLockManager : public LatchedLockManager {
   explicit GlobalLockManager(int nbuckets) : LatchedLockManager(nbuckets) {}
   inline virtual ~GlobalLockManager() {}
 
-  Pthread_mutex KeyMutex(const Key key);
+  Pthread_mutex& KeyMutex(const Key key);
   //virtual LockMode Status(const Key& key, vector<int>* owners);
  protected:
   Pthread_mutex table_mutex;

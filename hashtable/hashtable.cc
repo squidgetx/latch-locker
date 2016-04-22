@@ -105,7 +105,7 @@ void Hashtable::unlock(Key key) {
   lock_array[b_index].unlock();
 }
 
-Pthread_mutex Hashtable::mutex(const Key key) {
+Pthread_mutex& Hashtable::mutex(const Key key) {
   int b_index = hash(key);
   return lock_array[b_index];
 }

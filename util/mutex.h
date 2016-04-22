@@ -33,7 +33,7 @@ private:
  */
 class Pthread_mutex_guard {
 public:
-  Pthread_mutex_guard(Pthread_mutex mutex) : mutex(mutex) {
+  Pthread_mutex_guard(Pthread_mutex& mutex) : mutex(mutex) {
     mutex.lock();
   }
 
@@ -43,7 +43,7 @@ public:
 
   Pthread_mutex_guard& operator=(const Pthread_mutex_guard& rhs) = delete;
 private:
-  Pthread_mutex mutex;
+  Pthread_mutex& mutex;
 };
 
 #endif // UTIL_MUTEX_H

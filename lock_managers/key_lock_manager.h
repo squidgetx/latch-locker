@@ -12,7 +12,7 @@ class KeyLockManager : public LatchedLockManager {
   explicit KeyLockManager(int nbuckets) : LatchedLockManager(nbuckets) {}
   inline virtual ~KeyLockManager() {}
 
-  Pthread_mutex KeyMutex(const Key key);
+  Pthread_mutex& KeyMutex(const Key key);
   //virtual LockMode Status(const Key& key, vector<int>* owners);
 };
 

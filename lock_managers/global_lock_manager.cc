@@ -2,6 +2,6 @@
 #include "util/mutex.h"
 #include "util/common.h"
 
-Pthread_mutex GlobalLockManager::KeyMutex(const Key key) {
+Pthread_mutex& GlobalLockManager::KeyMutex(const Key key) {
   return table_mutex;
 }

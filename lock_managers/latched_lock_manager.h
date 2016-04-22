@@ -20,7 +20,7 @@ class LatchedLockManager : public LockManager {
   /**
    * Get a guard for the key at @key.
    */
-  virtual Pthread_mutex KeyMutex(const Key key) = 0;
+  virtual Pthread_mutex& KeyMutex(const Key key) = 0;
 };
 
 #endif // LOCK_MANAGERS_LATCHED_LOCK_MANAGER
