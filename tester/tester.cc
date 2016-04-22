@@ -17,6 +17,14 @@ static inline double GetTime() {
   return tv.tv_sec + tv.tv_usec/1e6;
 }
 
+struct lock_handler_args {
+  pthread_mutex_t *queue_mutex_;
+  std::queue<std::pair<Key, LockRequest>> *lr_queue_;
+  LockManager *lm_;
+  lock_handler_args(pthread_mutex_t *m, std::queue<std::pair<Key, LockRequest>> *d,
+      LockManager *l) : queue_mutex_(m), lr_queue_(d), lm_(l) {}
+};
+
 Tester::Tester() {
 }
 
@@ -102,10 +110,57 @@ std::vector<std::pair<Key, LockRequest>> Tester::GenerateRequests(int n, int k, 
   return lock_requests;
 }
 
+void *threaded_lock_acquirer(void *args) {
+  // acquire phase
+  struct lock_handler_args *lha = (struct lock_handler_args *)args;
+
+  while (lha->lr_queue_->size()) {
+    pthread_mutex_lock(lha->queue_mutex_);
+    if (lha->lr_queue_->size() == 0) {
+      pthread_mutex_unlock(lha->queue_mutex_);
+      break;
+    }
+    std::pair<Key, LockRequest> p = lha->lr_queue_->front();
+    lha->lr_queue_->pop();
+    pthread_mutex_unlock(lha->queue_mutex_);
+    
+    Key k = p.first;
+    LockRequest r = p.second;
+    if (r.mode_ == SHARED) {
+      lha->lm_->ReadLock(r.txn_, k);
+    } else if (r.mode_ == EXCLUSIVE) {
+      lha->lm_->WriteLock(r.txn_, k);
+    }
+  }
+  pthread_exit(NULL);
+}
+
+void *threaded_lock_releaser(void *args) {
+  // release phase
+  struct lock_handler_args *lha = (struct lock_handler_args *)args;
+
+  while (lha->lr_queue_->size()) {
+    pthread_mutex_lock(lha->queue_mutex_);
+    if (lha->lr_queue_->size() == 0) {
+      pthread_mutex_unlock(lha->queue_mutex_);
+      break;
+    }
+    std::pair<Key, LockRequest> p = lha->lr_queue_->front();
+    lha->lr_queue_->pop();
+    pthread_mutex_unlock(lha->queue_mutex_);
+    
+    Key k = p.first;
+    LockRequest r = p.second;
+    lha->lm_->Release(r.txn_, k);
+  }
+  pthread_exit(NULL);
+}
+
+
 void Tester::Benchmark(std::vector<std::pair<Key, LockRequest> > lock_requests) {
   LockManager *lm;
   // three types of mgr_s
-  std::string types[] = { "Global Lock", "Key Lock", "Latch-Free"  };
+  std::string types[] = { "Global Lock", "Key Lock", "Latch-Free"};
   for (int i = 0; i < 2; i++) {
     switch(i) {
       case 0:
@@ -120,33 +175,44 @@ void Tester::Benchmark(std::vector<std::pair<Key, LockRequest> > lock_requests) 
       default:
         break;
     }
+
+    //copy data to queue
+    for (int j = 0; j < lock_requests.size(); j++) {
+      lr_queue.push(lock_requests[j]);
+    }
+
+    struct lock_handler_args lha(&queue_mutex, &lr_queue, lm);
+
     double throughput[2];
 
     // Record start time.
     double start = GetTime();
 
-    // acquire phase
-    for (auto it = lock_requests.begin(); it != lock_requests.end(); ++it) {
-      Key k = it->first;
-      LockRequest r = it->second;
-      if (r.mode_ == SHARED) {
-        lm->ReadLock(r.txn_, k);
-      } else if (r.mode_ == EXCLUSIVE) {
-        lm->WriteLock(r.txn_, k);
-      }
+    for (int j = 0; j < NUM_THREADS; j++) {
+      pthread_create(&pthreads[j], NULL, threaded_lock_acquirer, (void*)&lha);
+    }
+
+    for (int j = 0; j < NUM_THREADS; j++) {
+      pthread_join(pthreads[j], NULL);
     }
 
     // Record end time
     double end = GetTime();
     throughput[0] = lock_requests.size() / (end-start);
 
+    //copy data to queue
+    for (int j = 0; j < lock_requests.size(); j++) {
+      lr_queue.push(lock_requests[j]);
+    }
 
     start = GetTime();
-    // release phase
-    for (auto it = lock_requests.begin(); it != lock_requests.end(); ++it) {
-      Key k = it->first;
-      LockRequest r = it->second;
-      lm->Release(r.txn_, k);
+
+    for (int j = 0; j < NUM_THREADS; j++) {
+      pthread_create(&pthreads[j], NULL, threaded_lock_releaser, (void*)&lha);
+    }
+
+    for (int j = 0; j < NUM_THREADS; j++) {
+      pthread_join(pthreads[j], NULL);
     }
 
     end = GetTime();

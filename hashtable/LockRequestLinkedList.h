@@ -27,6 +27,7 @@ private:
   int size_to_req;
   TLinkedList<MemoryChunk<TNode<LockRequest> > >* memory_list;
   LockPool * lock_pool;
+  pthread_mutex_t janky_mutex;
 };
 
 #endif
