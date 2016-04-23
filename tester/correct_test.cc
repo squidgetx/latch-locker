@@ -30,6 +30,7 @@ void *t_lock_acquirer(void *args) {
   while (lha->queue_->size()) {
     pthread_mutex_lock(lha->queue_mutex_);
     if (lha->queue_->size() == 0) {
+      pthread_mutex_unlock(lha->queue_mutex_);
       break;
     }
     std::pair<int, bool> p = lha->queue_->front();
@@ -69,6 +70,7 @@ void CorrectTester::MultithreadedLocking(LockManager *lm) {
   //queue and vector of the same thing
   std::queue<std::pair<int, bool>> q;
   pthread_mutex_t m;
+  pthread_mutex_init(&m, NULL);
   int grants;
 
   // 1
