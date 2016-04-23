@@ -18,9 +18,12 @@
 class CorrectTester {
   public:
     CorrectTester();
+	
+
     void Run();
   private:
     void SimpleLocking(LockManager * lm);
+    void MultithreadedLocking(LockManager *lm);
 
 };
 
