@@ -23,13 +23,12 @@ bool conflicts(LockRequest * o, LockRequest * n) {
 }
 
 bool LatchFreeLockManager::WriteLock(Txn* txn, const Key key) {
-  // TODO don't dynamically create this
-  LockRequest * n_lock = new LockRequest(EXCLUSIVE, txn);
+  LockRequest n_lock = LockRequest(EXCLUSIVE, txn);
   return AcquireLock(n_lock);
 }
 
 bool LatchFreeLockManager::ReadLock(Txn* txn, const Key key) {
-  LockRequest * n_lock = new LockRequest(SHARED, txn);
+  LockRequest n_lock = LockRequest(SHARED, txn);
   return AcquireLock(n_lock);
 }
 
@@ -39,9 +38,9 @@ bool LatchFreeLockManager::AcquireLock(LockRequest n_lock) {
   LockRequestLinkedList * list = locks[bucket];
   list->atomic_lock_insert(n_lock);
   // iterate over all locks in the chain
-  LockRequest * req = list->head();
+  TNode<LockRequest>* req = list->head();
   while (req != NULL) {
-    if (conflicts(req, n_lock)) {
+    if (conflicts(req->data, n_lock)) {
       n_lock->state_ = WAIT;
       atomic_synchronize();
       if (req->state_ == OBSOLETE) {
@@ -63,25 +62,25 @@ void LatchFreeLockManager::Release(Txn* txn, const Key key) {
   LockRequestLinkedList * list = locks[hash(key)];
   // Latch free iterate through the list to find the lock for the
   // particular transaction
-  LockRequest req = list->head();
+  TNode<LockRequest>* req = list->head();
   // TODO why does release code suck so much
   // First find the lock
   while (req != null) {
-    if (req->txn_ == txn) {
-      request_release(req);
+    if (req->data.txn_ == txn) {
+      request_release(list,req);
       break;
     }
-    req = latch_free_iterate(req);
+    req = list->latch_free_next(req);
   }
 }
 
-void LatchFreeLockManager::request_release(lock) {
+void LatchFreeLockManager::request_release(LockRequestLinkedList* list, TNode<LockRequest>* lock) {
   LockState oldState = lock->state_;
   LockMode oldMode = lock->mode_;
     // TODO is there a concurrency issue here with reading these fields??
   lock->state_ = OBSOLETE;
   atomic_synchronize();
-  LockRequest req = latch_free_iterate(lock);
+  TNode<LockRequest>* req = list->latch_free_next(lock);
   bool activateNext = false;
   if (oldState == ACTIVE) {
     activateNext = true;
@@ -92,12 +91,12 @@ void LatchFreeLockManager::request_release(lock) {
 
   }
   while (req != null) {
-    if (req->state == WAIT) {
+    if (req->data.state == WAIT) {
 
     }
 
 
-    req = latch_free_iterate(req);
+    req = list->latch_free_next(req);
   }
 
 
