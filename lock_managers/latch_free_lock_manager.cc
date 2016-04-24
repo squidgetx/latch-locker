@@ -4,12 +4,10 @@
 
 LatchFreeLockManager::LatchFreeLockManager() {
   // Allocate memory for the hash table
-  
 
 }
 
-
-bool conflicts(LockRequest * o, LockRequest * n) {
+bool conflicts(LockRequest o, LockRequest n) {
   if (o_>state_ == OBSOLETE) {
     return false;
   }
@@ -24,18 +22,17 @@ bool conflicts(LockRequest * o, LockRequest * n) {
 
 bool LatchFreeLockManager::WriteLock(Txn* txn, const Key key) {
   LockRequest n_lock = LockRequest(EXCLUSIVE, txn);
-  return AcquireLock(n_lock);
+  return AcquireLock(n_lock, key);
 }
 
 bool LatchFreeLockManager::ReadLock(Txn* txn, const Key key) {
   LockRequest n_lock = LockRequest(SHARED, txn);
-  return AcquireLock(n_lock);
+  return AcquireLock(n_lock, key);
 }
 
-bool LatchFreeLockManager::AcquireLock(LockRequest n_lock) {
+bool LatchFreeLockManager::AcquireLock(LockRequest n_lock, const Key key) {
   n_lock->state_ = ACTIVE;
-  int bucket = hash(key);
-  LockRequestLinkedList * list = locks[bucket];
+  LockRequestLinkedList * list = lock_table.get_list(key);
   list->atomic_lock_insert(n_lock);
   // iterate over all locks in the chain
   TNode<LockRequest>* req = list->head();
@@ -59,47 +56,50 @@ bool LatchFreeLockManager::AcquireLock(LockRequest n_lock) {
 
 void LatchFreeLockManager::Release(Txn* txn, const Key key) {
   // Find the lock that the txn holds on this key
-  LockRequestLinkedList * list = locks[hash(key)];
+  LockRequestLinkedList * list = lock_table.get_list(key);
   // Latch free iterate through the list to find the lock for the
   // particular transaction
+  // Important to remember the list is ONLY modified before the tail,
+  // that is, none of the data we read on this traversal can be modified
+  // by other threads with the exception of other threads cleaning up
+  // OBSOLETE locks, but we skip this anyway
   TNode<LockRequest>* req = list->head();
-  // TODO why does release code suck so much
-  // First find the lock
+  TNode<LockRequest>* toRelease;
+  boolean foundExcl = false;
+  boolean foundOurTxn = false;
   while (req != null) {
-    if (req->data.txn_ == txn) {
-      request_release(list,req);
-      break;
+    if (req->data.state_ == OBSOLETE) {
+      req = list->latch_free_next(req);
+      continue;
+    }
+    if (req->data.mode_ == EXCLUSIVE) {
+      foundExcl = true;
+      if (foundOurTxn) {
+        break;
+      }
+    } else if (foundOurTxn) {
+      // Grant the lock!
+      req->data.state_ = ACTIVE;
+      atomic_synchronize();
+    } else if (req->data.txn_ == txn) {
+      // If we are a SHARED lock
+      //  then any locks after us are already in the correct state
+      //  and we can quit
+      //If we are an EXCLUSIVE lock AND we found an exclusive lock
+      //  then any locks after us are already in the correct state
+      // If we are an EXCLUSIVE lock AND we found NO exclusive locks
+      //  then we need to grant any shared locks after us UNTIL we find
+      //  an exclusive lock (or we are at the end of the list)
+      foundOurTxn = true;
+      toRelease = req;
+      req->data.state_ = OBSOLETE;
+      atomic_synchronize();
+      if (foundExcl == true || req->data.mode_ == SHARED) {
+        break;
+      }
     }
     req = list->latch_free_next(req);
   }
+  // Clean up
 }
 
-void LatchFreeLockManager::request_release(LockRequestLinkedList* list, TNode<LockRequest>* lock) {
-  LockState oldState = lock->state_;
-  LockMode oldMode = lock->mode_;
-    // TODO is there a concurrency issue here with reading these fields??
-  lock->state_ = OBSOLETE;
-  atomic_synchronize();
-  TNode<LockRequest>* req = list->latch_free_next(lock);
-  bool activateNext = false;
-  if (oldState == ACTIVE) {
-    activateNext = true;
-  } else {
-    // If all the previous locks were SHARED and this one was exclusive,
-    // then if a SHARED follows it should be activated...
-    // fuck this
-
-  }
-  while (req != null) {
-    if (req->data.state == WAIT) {
-
-    }
-
-
-    req = list->latch_free_next(req);
-  }
-
-
-
-
-}
