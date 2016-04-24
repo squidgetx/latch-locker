@@ -15,7 +15,7 @@ struct lha {
   std::queue<std::pair<int, bool>> *queue_;
   pthread_mutex_t *queue_mutex_;
   LockManager *lm_;
-  lha(Txn *t, std::queue<std::pair<int, bool>> *q, pthread_mutex_t *qm, LockManager *l) : 
+  lha(Txn *t, std::queue<std::pair<int, bool>> *q, pthread_mutex_t *qm, LockManager *l) :
       txn_(t), queue_(q), queue_mutex_(qm), lm_(l) {};
 };
 
@@ -79,7 +79,7 @@ void CorrectTester::MultithreadedLocking(LockManager *lm) {
     std::pair<int, bool> p(1, false);
     q.push(p);
   }
-  
+
   for (int i = 0; i < NUM_THREADS; i++) {
     Txn t(i);
     struct lha args(&t, &q, &m, lm);
@@ -103,7 +103,7 @@ void CorrectTester::MultithreadedLocking(LockManager *lm) {
     std::pair<int, bool> p(2, true);
     q.push(p);
   }
-  
+
   for (int i = 0; i < NUM_THREADS; i++) {
     Txn t(i);
     struct lha args(&t, &q, &m, lm);
@@ -127,7 +127,7 @@ void CorrectTester::MultithreadedLocking(LockManager *lm) {
     std::pair<int, bool> p(2, false);
     q.push(p);
   }
-  
+
   for (int i = 0; i < NUM_THREADS; i++) {
     Txn t(i);
     struct lha args(&t, &q, &m, lm);
@@ -211,6 +211,6 @@ void CorrectTester::Run() {
         break;
     }
     SimpleLocking(lm);
-    MultithreadedLocking(lm); 
+    MultithreadedLocking(lm);
   }
 }
