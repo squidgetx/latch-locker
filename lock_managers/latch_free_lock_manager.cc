@@ -8,12 +8,6 @@ LatchFreeLockManager::LatchFreeLockManager() {
 
 }
 
-void next_pointer_update(LockRequestLinkedList* list) {
-
-  //TODO use compare and swap to update all the next pointers
-  // in the list (to skip over OBSOLETE)
-
-}
 
 bool conflicts(LockRequest * o, LockRequest * n) {
   if (o_>state_ == OBSOLETE) {

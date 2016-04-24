@@ -117,6 +117,17 @@ fetch_and_increment(volatile uint64_t *variable)
   return counter_value + 1;
 }
 
+inline uint64_t
+fetch_and_add(volatile uint64_t *variable, long value)
+{
+  long counter_value = value;
+  asm volatile ("lock; xaddq %%rax, %1;"
+                : "=a" (counter_value), "+m" (*variable)
+                : "a" (counter_value)
+                : "memory");
+  return counter_value + value;
+}
+
 inline long
 fetch_and_decrement(volatile uint64_t *variable) 
 {

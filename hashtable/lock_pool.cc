@@ -10,18 +10,16 @@ LockPool::LockPool(int n) : capacity(n) {
   pthread_mutex_init(&pool_mutex, NULL);
 }
 
-MemoryChunk<TNode<LockRequest> > * LockPool::get_uninit_locks(int n) {
+void LockPool::get_uninit_locks(int n, MemoryChunk<TNode<LockRequest> > &mem) {
   // Get a chunk of n lock requests
   pthread_mutex_lock(&pool_mutex);
   if (capacity - n < 0) {
     std::cerr << "Global lock pool out of mem\n";
-    return NULL;
   }
   capacity -= n;
 
-
-  MemoryChunk<TNode<LockRequest> > * mem = new MemoryChunk<TNode<LockRequest> >(memory_ptr, n);
+  mem.loc = memory_ptr;
+  mem.size = n;
   memory_ptr += n;
-    pthread_mutex_unlock(&pool_mutex);
-  return mem;
+  pthread_mutex_unlock(&pool_mutex);
 }

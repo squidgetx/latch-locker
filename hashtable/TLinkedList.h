@@ -2,6 +2,7 @@
 #define HASHTABLE_TLINKEDLIST_H
 
 #include "TNode.h"
+#include "util/util.h"
 
 template <typename T>
 class TLinkedList
@@ -19,7 +20,8 @@ public:
   }
 
   void append(TNode<T> *n);
-  void prepend(TNode<T> *n);
+  void atomic_append(TNode<T> *n);
+  //void prepend(TNode<T> *n);
   void remove(TNode<T> *n);
   int size();
 
@@ -31,18 +33,30 @@ public:
 
 template <class T>
 void TLinkedList<T>::append(TNode<T> *n) {
-  if (head == NULL) {
+  if (tail == NULL) {
     head = n;
     tail = n;
     isize = 1;
   } else {
     tail->next = n;
     n->prev = tail;
-    n->next = NULL;
+    //n->next = NULL;
     tail = n;
     isize++;
   }
 }
+
+template <class T>
+void TLinkedList<T>::atomic_append(TNode<T> *n) {
+    TNode<T>* old_tail = (TNode<T> *) xchgq((uint64_t *) &tail, (uint64_t) n);
+    if (old_tail != NULL)
+        old_tail->next = n;
+    else
+        head = n;
+    fetch_and_increment((uint64_t *) &isize);
+}
+
+/*
 template <class T>
 void TLinkedList<T>::prepend(TNode<T> *n) {
   if (head == NULL) {
@@ -56,6 +70,7 @@ void TLinkedList<T>::prepend(TNode<T> *n) {
     isize++;
   }
 }
+*/
 
 template <class T>
 void TLinkedList<T>::remove(TNode<T> *n) {
