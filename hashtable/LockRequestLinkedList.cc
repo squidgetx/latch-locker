@@ -55,7 +55,7 @@ void LockRequestLinkedList::next_pointer_update() {
     }
 }
 
-void LockRequestLinkedList::atomic_lock_insert(LockRequest lr)
+TNode<LockRequest> * LockRequestLinkedList::atomic_lock_insert(LockRequest lr)
 {
   // Append the new lock request using the latch free algorithm
   TNode<LockRequest> * lock = atomicCreateRequest(lr);
@@ -63,6 +63,7 @@ void LockRequestLinkedList::atomic_lock_insert(LockRequest lr)
   atomic_synchronize();
   next_pointer_update();
   atomic_synchronize();
+  return lock;
 }
 
 TNode<LockRequest> * LockRequestLinkedList::latch_free_next(TNode<LockRequest>* req)
@@ -141,10 +142,19 @@ void LockRequestLinkedList::printList() {
     LockRequest lr = node->data;
     std::cout << "     Txn " << lr.txn_->txn_id;
     if (lr.mode_ == EXCLUSIVE) {
-      std::cout << "EXCLUSIVE\n";
+      std::cout << " EXCLUSIVE ";
     } else {
-      std::cout << "SHARED\n";
+      std::cout << " SHARED ";
     }
+    if (lr.state_ == WAIT) {
+      std::cout << "WAIT ";
+    } else if (lr.state_ == ACTIVE) {
+      std::cout << "ACTIVE ";
+    } else if (lr.state_ == OBSOLETE) {
+      std::cout << "OBSOLETE ";
+    } 
+  //  std::cout << lr.txn_;
+    std::cout << std::endl;
   }
   std::cout << "   >\n";
 }

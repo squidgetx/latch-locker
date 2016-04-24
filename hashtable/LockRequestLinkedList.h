@@ -15,7 +15,7 @@ public:
   LockRequestLinkedList(LockPool* lock_pool, int init_mem);
   void insertRequest(LockRequest lr);
   void deleteRequest(TNode<LockRequest>* lr);
-  void atomic_lock_insert(LockRequest lr);
+  TNode<LockRequest>* atomic_lock_insert(LockRequest lr);
   void atomic_synchronize();
   void next_pointer_update();
   TNode<LockRequest> * latch_free_next(TNode<LockRequest> * req);
