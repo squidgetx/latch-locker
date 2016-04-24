@@ -119,9 +119,8 @@ TNode<LockRequest> * LockRequestLinkedList::createRequest(LockRequest lr) {
 
   TNode<LockRequest> * node = memory_list->head->data.loc;
   memory_list->head->data.size--;
-  memory_list->head->data.loc+=1;
-  node->data.txn_ = lr.txn_;
-  node->data.mode_ = lr.mode_;
+  memory_list->head->data.loc++;
+  node->data = lr;
 
   return node;
 }

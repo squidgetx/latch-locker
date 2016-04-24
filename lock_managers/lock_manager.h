@@ -42,12 +42,19 @@ class LockManager {
   // If the granted request(s) corresponds to a
   // transaction that has now acquired ALL of its locks, that transaction is
   // appended to the 'ready_txns_' queue.
+  //
+  // Note: At this point, Releasing a lock that is not held results in
+  // *undefined* behavior.
   virtual void Release(Txn* txn, const Key key) = 0;
 
   // Sets '*owners' to contain the txn IDs of all txns holding the lock, and
   // returns the current LockMode of the lock: UNLOCKED if it is not currently
   // held, SHARED or EXCLUSIVE if it is, depending on the current state.
   // virtual LockMode Status(const Key key, vector<int>* owners) = 0;
+
+  // Check the state of txn's lock.
+  // @return NOT_FOUND if txn has no lock in the chain.
+  virtual LockState CheckState(const Txn *txn, const Key key) = 0;
 
  protected:
   // List is a placeholder for linked list structure we will define later

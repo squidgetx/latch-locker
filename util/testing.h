@@ -69,8 +69,8 @@ bool __failed_;
       cout << "EXPECT_EQ(" << #A << ", " << #B                   \
            << ") \033[1;31mfailed\033[0m at "                    \
            << __FILE__ << ":" << __LINE__ << "\n"                \
-           << "Expected:\n" << A  << "\n"                        \
-           << "Actual:\n" << B << "\n" << flush;                 \
+           << "Expected:\n" << B  << "\n"                        \
+           << "Actual:\n" << A << "\n" << flush;                 \
     }                                                            \
   } while (0)
 

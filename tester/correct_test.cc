@@ -170,8 +170,8 @@ void CorrectTester::SimpleLocking(LockManager * lm) {
   EXPECT_FALSE(lm->WriteLock(t2, 1 ));
 
   std::cout << "Shared lock doesn't need to wait after releasing exclusive" << std::endl;
-  lm->Release(t2, 1);
   lm->Release(t1, 1);
+  lm->Release(t2, 1);
   EXPECT_TRUE(lm->ReadLock(t1, 1));
 
   std::cout << "Additional exclusive must wait" << std::endl;
@@ -181,12 +181,68 @@ void CorrectTester::SimpleLocking(LockManager * lm) {
   EXPECT_FALSE(lm->ReadLock(t4, 1 ));
 
   std:: cout << "Additional shared acquires if exclusive is released" << std::endl;
+  lm->Release(t1, 1);
   lm->Release(t3, 1);
   EXPECT_TRUE(lm->ReadLock(t3, 1));
 
   lm->Release(t1,1);
   lm->Release(t3,1);
   lm->Release(t4,1);
+  END;
+}
+
+/**
+ * Test various edge cases associated with releasing locks.
+ */
+void CorrectTester::ReleaseCases(LockManager *lm) {
+  BEGIN;
+  Txn *t1 = new Txn(1);
+  Txn *t2 = new Txn(2);
+  Txn *t3 = new Txn(3);
+  Txn *t4 = new Txn(4);
+
+  // Notation for all test cases is a sequence of locks, with the lock to be
+  // released in brackets.
+  //
+  // Locks that are granted are in astericks.
+  //
+  // Each test uses a different key to ensure there is not interference.
+
+  // *[SHARED]* *SHARED* EXCLUSIVE
+  // *SHARED* EXCLUSIVE
+  EXPECT_TRUE(lm->ReadLock(t1, 1));
+  EXPECT_TRUE(lm->ReadLock(t2, 1));
+  EXPECT_FALSE(lm->WriteLock(t3, 1));
+
+  lm->Release(t1, 1);
+  EXPECT_EQ(lm->CheckState(t1, 1), NOT_FOUND);
+  EXPECT_EQ(lm->CheckState(t2, 1), ACTIVE);
+  EXPECT_EQ(lm->CheckState(t3, 1), WAIT);
+
+  // *SHARED* *[SHARED]* EXCLUSIVE
+  // *SHARED* EXCLUSIVE SHARED
+  EXPECT_TRUE(lm->ReadLock(t1, 2));
+  EXPECT_TRUE(lm->ReadLock(t2, 2));
+  EXPECT_FALSE(lm->WriteLock(t3, 2));
+
+  lm->Release(t2, 2);
+  EXPECT_EQ(lm->CheckState(t1, 2), ACTIVE);
+  EXPECT_EQ(lm->CheckState(t2, 2), NOT_FOUND);
+  EXPECT_EQ(lm->CheckState(t3, 2), WAIT);
+
+  // *[EXCLUSIVE]* SHARED SHARED EXCLUSIVE
+  // *SHARED* *SHARED* EXCLUSIVE
+  EXPECT_TRUE(lm->WriteLock(t1, 3));
+  EXPECT_FALSE(lm->ReadLock(t2, 3));
+  EXPECT_FALSE(lm->ReadLock(t3, 3));
+  EXPECT_FALSE(lm->WriteLock(t4, 3));
+
+  lm->Release(t1, 3);
+  EXPECT_EQ(lm->CheckState(t1, 3), NOT_FOUND);
+  EXPECT_EQ(lm->CheckState(t2, 3), ACTIVE);
+  EXPECT_EQ(lm->CheckState(t3, 3), ACTIVE);
+  EXPECT_EQ(lm->CheckState(t4, 3), WAIT);
+
   END;
 }
 
@@ -212,5 +268,6 @@ void CorrectTester::Run() {
     }
     SimpleLocking(lm);
     MultithreadedLocking(lm);
+    ReleaseCases(lm);
   }
 }
