@@ -10,7 +10,7 @@ class LockPool
 {
 public:
   LockPool(int n);
-  void get_uninit_locks(int n, MemoryChunk<TNode<LockRequest> > &mem);
+  void get_uninit_locks(int n, TLinkedList<MemoryChunk<TNode<LockRequest> > >* memory_list);
 
 private:
   TNode<LockRequest>* memory_array;
