@@ -48,6 +48,7 @@ bool LatchFreeLockManager::AcquireLock(LockRequest n_lock, const Key key) {
 }
 
 void LatchFreeLockManager::Release(Txn* txn, const Key key) {
+//  std::cout << "Releasing txn " << txn->txn_id << std::endl;
   // Find the lock that the txn holds on this key
   LockRequestLinkedList * list = lock_table.get_list(key);
   // Latch free iterate through the list to find the lock for the
@@ -95,6 +96,6 @@ void LatchFreeLockManager::Release(Txn* txn, const Key key) {
     req = list->latch_free_next(req);
   }
   // Clean up
-  //list->printList();
+  // list->printList();
 }
 

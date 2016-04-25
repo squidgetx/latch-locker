@@ -3,7 +3,7 @@
 #include <pthread.h>
 #include <queue>
 
-int NUM_THREADS = 10;
+//int NUM_THREADS = 10;
 
 CorrectTester::CorrectTester() {
 
@@ -13,10 +13,9 @@ struct lha {
   Txn *txn_;
   //key, exclusive
   std::queue<std::pair<int, bool>> *queue_;
-  pthread_mutex_t *queue_mutex_;
   LockManager *lm_;
-  lha(Txn *t, std::queue<std::pair<int, bool>> *q, pthread_mutex_t *qm, LockManager *l) : 
-      txn_(t), queue_(q), queue_mutex_(qm), lm_(l) {};
+  lha(Txn *t, std::queue<std::pair<int, bool>> *q, LockManager *l) : 
+      txn_(t), queue_(q), lm_(l) {};
 };
 
 // acquires and releases
@@ -25,17 +24,15 @@ void *t_lock_acquirer(void *args) {
   int *grants = new int;
   *grants = 0;
   int rejects = 0;
+  int id = lha->txn_->txn_id;
 
   std::vector<int> keys;
-  while (lha->queue_->size()) {
-    pthread_mutex_lock(lha->queue_mutex_);
+  while (true) {
     if (lha->queue_->size() == 0) {
-      pthread_mutex_unlock(lha->queue_mutex_);
       break;
     }
     std::pair<int, bool> p = lha->queue_->front();
     lha->queue_->pop();
-    pthread_mutex_unlock(lha->queue_mutex_);
 
     if (p.second) {
       if (lha->lm_->WriteLock(lha->txn_, p.first)) {
@@ -52,6 +49,13 @@ void *t_lock_acquirer(void *args) {
     }
     keys.push_back(p.first);
   }
+
+  // Stall for a little while to simulate transaction workload 
+  // (time between lock acquire + release)
+  for (int i = 0; i < 10000000; i++) {
+    single_work();
+  }
+  
   for (int i = 0; i < keys.size(); i++) {
     lha->lm_->Release(lha->txn_, keys[i]);
   }
@@ -62,28 +66,22 @@ void *t_lock_acquirer(void *args) {
 void CorrectTester::MultithreadedLocking(LockManager *lm) {
   BEGIN;
   int NUM_THREADS = 4;
+  int REPEATS = 4;
   pthread_t pthreads[NUM_THREADS];
 
-  int NUM_LOCKS = 500;
-
-  //key, exclusive bool
-  //queue and vector of the same thing
-  std::queue<std::pair<int, bool>> q;
-  pthread_mutex_t m;
-  pthread_mutex_init(&m, NULL);
   int grants;
 
   // 1
-  // all read locks, same key
-  for (int i = 0; i < NUM_LOCKS; i++) {
-    std::pair<int, bool> p(1, false);
-    q.push(p);
-  }
-  
+  // Have each thread request a shared lock and confirm each obtain
+  // it successfully
+  // 
   for (int i = 0; i < NUM_THREADS; i++) {
-    Txn t(i);
-    struct lha args(&t, &q, &m, lm);
-    pthread_create(&pthreads[i], NULL, t_lock_acquirer, (void*)&args);
+    Txn * txn = new Txn(i);
+    std::queue<std::pair<int, bool>> * request_q = new std::queue<std::pair<int, bool>>();
+    std::pair<int, bool> * p = new std::pair<int, bool>(1, false);
+    request_q->push(*p);
+    struct lha * args = new struct lha(txn, request_q, lm);
+    pthread_create(&pthreads[i], NULL, t_lock_acquirer, (void*)args);
   }
 
   grants = 0;
@@ -93,21 +91,18 @@ void CorrectTester::MultithreadedLocking(LockManager *lm) {
     grants += *g;
   }
 
-  std::cout << "Threaded: all shared locks granted" << std::endl;
-  EXPECT_TRUE((grants == NUM_LOCKS));
+  std::cout << "Threaded: all shared locks granted " << std::endl;
+  EXPECT_TRUE((grants == NUM_THREADS));
 
   // 2
-  // all write locks, same key
-
-  for (int i = 0; i < NUM_LOCKS; i++) {
-    std::pair<int, bool> p(2, true);
-    q.push(p);
-  }
-  
+  // all write locks, same key. Make sure only 1 thread got a lock
   for (int i = 0; i < NUM_THREADS; i++) {
-    Txn t(i);
-    struct lha args(&t, &q, &m, lm);
-    pthread_create(&pthreads[i], NULL, t_lock_acquirer, (void*)&args);
+    Txn * txn = new Txn(i);
+    std::queue<std::pair<int, bool>> * request_q = new std::queue<std::pair<int, bool>>();
+    std::pair<int, bool> * p = new std::pair<int, bool>(1, true);
+    request_q->push(*p);
+    struct lha * args = new struct lha(txn, request_q, lm);
+    pthread_create(&pthreads[i], NULL, t_lock_acquirer, (void*)args);
   }
 
   grants = 0;
@@ -117,32 +112,8 @@ void CorrectTester::MultithreadedLocking(LockManager *lm) {
     grants += *g;
   }
 
-  std::cout << "Threaded: one write lock granted" << std::endl;
+  std::cout << "Threaded: only one write lock granted " << grants << std::endl;
   EXPECT_TRUE((grants == 1));
-
-  // 3
-  // releases; all locks should have been released
-  // and all lock requests should thus be granted
-  for (int i = 0; i < NUM_LOCKS; i++) {
-    std::pair<int, bool> p(2, false);
-    q.push(p);
-  }
-  
-  for (int i = 0; i < NUM_THREADS; i++) {
-    Txn t(i);
-    struct lha args(&t, &q, &m, lm);
-    pthread_create(&pthreads[i], NULL, t_lock_acquirer, (void*)&args);
-  }
-
-  grants = 0;
-  for (int i = 0; i < NUM_THREADS; i++) {
-    int *g;
-    pthread_join(pthreads[i], (void**)&g);
-    grants += *g;
-  }
-
-  std::cout << "Threaded: releases correctly" << std::endl;
-  EXPECT_TRUE((grants == NUM_LOCKS));
 
   END;
 }
@@ -194,7 +165,7 @@ void CorrectTester::Run() {
   // Test the global lcok manager
   // three types of mgr_s
   LockManager * lm;
-  for (int i = 0; i < 2; i++) {
+  for (int i = 0; i < 3; i++) {
     switch(i) {
       case 0:
         lm = new GlobalLockManager(100);
@@ -204,9 +175,10 @@ void CorrectTester::Run() {
         lm = new KeyLockManager(100);
         std::cout << "** Key Lock Manager **" << std::endl;
         break;
-      //case 2:
-        //lm = new LatchFreeLockManager();
-        //break;
+      case 2:
+        lm = new LatchFreeLockManager(100);
+        std::cout<< "** Latch Free Lock Manager **" << std::endl;
+        break;
       default:
         break;
     }
