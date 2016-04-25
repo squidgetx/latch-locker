@@ -1,6 +1,5 @@
 #include "latch_free_lock_manager.h"
 
-#define MODULUS 5
 
 bool conflicts(LockRequest o, LockRequest n) {
   if (o.mode_ == EXCLUSIVE) {
@@ -99,3 +98,15 @@ void LatchFreeLockManager::Release(Txn* txn, const Key key) {
   // list->printList();
 }
 
+LockState LatchFreeLockManager::CheckState(const Txn *txn, const Key key) {
+  LockRequestLinkedList * list = lock_table.get_list(key);
+  TNode<LockRequest> * req = list->head;
+  while (req != NULL) {
+    if (req->data.txn_ == txn) {
+      barrier();
+      return req->data.state_;
+    }
+    req = list->latch_free_next(req);
+  }
+  return NOT_FOUND;
+}

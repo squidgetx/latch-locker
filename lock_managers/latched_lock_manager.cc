@@ -1,3 +1,5 @@
+#include <cassert>
+
 #include "lock_managers/latched_lock_manager.h"
 
 #include "util/mutex.h"
@@ -64,10 +66,13 @@ void LatchedLockManager::Release(Txn* txn, const Key key) {
 
   // First find the txn in the lock request list
   TNode<LockRequest> * current;
+  // True if txn is the first holder of the lock.
+  bool firstLockHolder = true;
   for(current = list->head; current != NULL; current = current->next) {
     if (current->data.txn_ == txn) {
       break;
     }
+    firstLockHolder = false;
   }
 
   if (current == NULL) {
@@ -76,6 +81,7 @@ void LatchedLockManager::Release(Txn* txn, const Key key) {
   }
 
   int mode = current->data.mode_;
+  assert(current->data.state_ == ACTIVE);
   TNode<LockRequest> * next = current->next;
   list->deleteRequest(current);
 
@@ -98,16 +104,29 @@ void LatchedLockManager::Release(Txn* txn, const Key key) {
   if (next->data.mode_ == SHARED) {
     // Grant the lock to all the locks in this segment waiting for
     // a SHARED lock
-    for( ; next != NULL; next = next->next) {
+    for (; next != NULL; next = next->next) {
       if (next->data.mode_ != SHARED) {
         break;
       }
       next->data.state_ = ACTIVE;
     }
 
-  } else {
+  } else if (firstLockHolder) {
     // Just grant to the lock to this request (exclusive lock)
     next->data.state_ = ACTIVE;
   }
 
+}
+
+LockState LatchedLockManager::CheckState(const Txn* txn, const Key key) {
+  Pthread_mutex_guard guard(KeyMutex(key));
+
+  TNode<LockRequest> *node = lock_table.get_list(key)->head;
+  for (; node != NULL; node = node->next) {
+    if (node->data.txn_ == txn) {
+      return node->data.state_;
+    }
+  }
+
+  return NOT_FOUND;
 }

@@ -15,6 +15,7 @@ enum LockState {
   ACTIVE = 0,
   WAIT = 1,
   OBSOLETE = 2,
+  NOT_FOUND = 3
 };
 
 struct LockRequest {

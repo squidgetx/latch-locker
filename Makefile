@@ -2,7 +2,7 @@ CXX=g++
 CXXFLAGS=-pthread -g --std=c++11 -I$(CURDIR)
 
 DIRS=util lock_managers hashtable tester
-SOURCES := 
+SOURCES :=
 BINS :=
 OBJECTS = $(patsubst %.cc, %.o, $(SOURCES))
 
@@ -10,8 +10,8 @@ all:
 
 include $(patsubst %, %/Makefile.inc, $(DIRS))
 
-BINS += test
-test: $(OBJECTS)
+BINS += test_all
+test_all: $(OBJECTS)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
 .PHONY: all
@@ -21,3 +21,7 @@ all: $(OBJECTS) $(BINS)
 clean:
 	rm `find . '-name' '*.o'`
 	rm -f $(BINS)
+
+.PHONY: test
+test: test_all
+	./test_all
