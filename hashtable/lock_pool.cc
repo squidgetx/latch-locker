@@ -1,5 +1,6 @@
 #include "lock_pool.h"
 #include <string.h>
+#include <cassert>
 
 LockPool::LockPool(int n) : capacity(n) {
   // For now, we just use a giant array
@@ -15,11 +16,13 @@ void LockPool::get_uninit_locks(int n, TLinkedList<MemoryChunk<TNode<LockRequest
   pthread_mutex_lock(&pool_mutex);
   if (capacity - n < 0) {
     std::cerr << "Global lock pool out of mem\n";
+    assert(1==0);
   }
   capacity -= n;
   TNode<LockRequest>* local_memory_ptr = memory_ptr;
   memory_ptr += n;
   pthread_mutex_unlock(&pool_mutex);
-
-  mem_list->atomic_append(new TNode<MemoryChunk<TNode<LockRequest>>>(MemoryChunk<TNode<LockRequest>>(local_memory_ptr,n)));
+  TNode<MemoryChunk<TNode<LockRequest>>>* new_node = new TNode<MemoryChunk<TNode<LockRequest>>>(MemoryChunk<TNode<LockRequest>>(local_memory_ptr,n));
+  assert(new_node->data.loc != NULL);
+  mem_list->atomic_append(new_node);
 }

@@ -1,16 +1,14 @@
 #include <cstdint> 
 #include "LockRequestLinkedList.h"
+#include <cassert>
 
 LockRequestLinkedList::LockRequestLinkedList(LockPool * lock_pool, int init_mem) {
   // Construct the lockrequestlinkedlist with some initial amount of memory
   // with a reference to the global lock pool for backup mem
   this->lock_pool = lock_pool;
   memory_list = new TLinkedList<MemoryChunk<TNode<LockRequest> > >();
-  MemoryChunk<TNode<LockRequest> >* init_chunk = new MemoryChunk<TNode<LockRequest> >(NULL,0);
-  TNode<MemoryChunk<TNode<LockRequest> > > * init_node = new TNode<MemoryChunk<TNode<LockRequest> > >(*init_chunk);
   lock_pool->get_uninit_locks(init_mem, memory_list);
   size_to_req = 2*init_mem;
-  memory_list->append(init_node);
 }
 
 void LockRequestLinkedList::insertRequest(LockRequest lr)
@@ -83,27 +81,31 @@ TNode<LockRequest> * LockRequestLinkedList::atomicCreateRequest(LockRequest lr) 
   // lock request linked list.
 
   // If the local memory pool is empty, get more from the global pool
-  long rem_size;
+  int64_t rem_size;
   TNode<MemoryChunk<TNode<LockRequest> > >* memhead;
   do {
       memhead = memory_list->head;
       while (memhead->data.size <= 0)
       {
+        assert(memhead->data.loc != NULL);
           if (memhead->next != NULL) cmp_and_swap((uint64_t*)&(memory_list->head), (uint64_t) memhead, (uint64_t) memhead->next); 
           else {
               if (cmp_and_swap((uint64_t*)&allocating, 0, 1)) {
                   lock_pool->get_uninit_locks(size_to_req, memory_list); 
+                  size_to_req *= 2;
               }
           }
+
           memhead = memory_list->head;
       }
 
-     rem_size = (int)fetch_and_decrement((uint64_t*)&(memhead->data.size));
+     rem_size = (int64_t)fetch_and_decrement((uint64_t*)&(memhead->data.size));
   } while (rem_size < 0);
 
   if (rem_size == 0) allocating = 0;
 
   TNode<LockRequest> * node = ((TNode<LockRequest>*) fetch_and_add((uint64_t*) &(memhead->data.loc), sizeof(TNode<LockRequest>))) - 1;
+  assert(memhead->data.loc != NULL);
   node->data.txn_ = lr.txn_;
   node->data.mode_ = lr.mode_;
 
@@ -118,6 +120,7 @@ TNode<LockRequest> * LockRequestLinkedList::createRequest(LockRequest lr) {
   if (memory_list->head->data.size == 0) {
    // std::cout << "local pool empty, requesting " << size_to_req << "\n";
      lock_pool->get_uninit_locks(size_to_req, memory_list);
+     size_to_req *= 2;
   } else {
    // std::cout << "local pool head node has " << memory_list->head->data.size << " blocks free!\n";
 

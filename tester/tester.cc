@@ -161,7 +161,7 @@ void Tester::Benchmark(std::vector<std::pair<Key, LockRequest> > lock_requests) 
   LockManager *lm;
   // three types of mgr_s
   std::string types[] = { "Global Lock", "Key Lock", "Latch-Free"};
-  for (int i = 0; i < 2; i++) {
+  for (int i = 0; i < 3; i++) {
     switch(i) {
       case 0:
         lm = new GlobalLockManager(100);
@@ -169,9 +169,9 @@ void Tester::Benchmark(std::vector<std::pair<Key, LockRequest> > lock_requests) 
       case 1:
         lm = new KeyLockManager(100);
         break;
-      //case 2:
-        //lm = new LatchFreeLockManager();
-        //break;
+      case 2:
+        lm = new LatchFreeLockManager(100);
+        break;
       default:
         break;
     }

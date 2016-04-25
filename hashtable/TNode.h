@@ -1,5 +1,6 @@
 #ifndef HASHTABLE_TNODE_H
 #define HASHTABLE_TNODE_H
+#include <stdint.h>
 
 template <typename T>
 struct TNode // Node is a private implementation detail
@@ -13,9 +14,9 @@ struct TNode // Node is a private implementation detail
 
 template <typename T>
 struct MemoryChunk {
-	MemoryChunk(T* loc, int size): loc(loc), size(size) {}
+	MemoryChunk(T* loc, int64_t size): loc(loc), size(size) {}
 	T* loc;
-	int size;
+	int64_t size;
 };
 
 #endif
