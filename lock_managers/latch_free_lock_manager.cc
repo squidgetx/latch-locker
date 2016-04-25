@@ -34,6 +34,7 @@ bool LatchFreeLockManager::AcquireLock(LockRequest n_lock, const Key key) {
       if (req->data.state_ == OBSOLETE) {
         in->data.state_ = ACTIVE;
         barrier();
+        req = list->latch_free_next(req);
         continue;
       }
       // deadlock check goes here but we skip this
