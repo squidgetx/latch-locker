@@ -43,7 +43,7 @@ bool LatchFreeLockManager::AcquireLock(LockRequest n_lock, const Key key) {
     }
     req = list->latch_free_next(req);
   }
-  list->printList();
+  //list->printList();
   return in->data.state_ == ACTIVE;
 }
 
@@ -95,6 +95,6 @@ void LatchFreeLockManager::Release(Txn* txn, const Key key) {
     req = list->latch_free_next(req);
   }
   // Clean up
-  list->printList();
+  //list->printList();
 }
 

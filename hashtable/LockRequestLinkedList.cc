@@ -58,9 +58,13 @@ void LockRequestLinkedList::next_pointer_update() {
 TNode<LockRequest> * LockRequestLinkedList::atomic_lock_insert(LockRequest lr)
 {
   // Append the new lock request using the latch free algorithm
-  TNode<LockRequest> * lock = atomicCreateRequest(lr);
+  //std::cout << "Creating request\n";
+  //TNode<LockRequest> * lock = atomicCreateRequest(lr);
+  TNode<LockRequest> * lock = new TNode<LockRequest>(lr);
+  //std::cout << "Appending request\n";
   atomic_append(lock);
   atomic_synchronize();
+ // std::cout << "Updating next pointers\n";
   next_pointer_update();
   atomic_synchronize();
   return lock;
