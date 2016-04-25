@@ -33,11 +33,9 @@ public:
 
 template <class T>
 void TLinkedList<T>::append(TNode<T> *n) {
-  n->next = NULL;
   if (tail == NULL) {
     head = n;
     tail = n;
-    n->prev = NULL;
     isize = 1;
   } else {
     tail->next = n;

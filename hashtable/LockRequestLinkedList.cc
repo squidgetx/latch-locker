@@ -59,8 +59,8 @@ TNode<LockRequest> * LockRequestLinkedList::atomic_lock_insert(LockRequest lr)
 {
   // Append the new lock request using the latch free algorithm
   //std::cout << "Creating request\n";
-  //TNode<LockRequest> * lock = atomicCreateRequest(lr);
-  TNode<LockRequest> * lock = new TNode<LockRequest>(lr);
+  TNode<LockRequest> * lock = atomicCreateRequest(lr);
+  //TNode<LockRequest> * lock = new TNode<LockRequest>(lr);
   //std::cout << "Appending request\n";
   atomic_append(lock);
   atomic_synchronize();
@@ -95,9 +95,10 @@ TNode<LockRequest> * LockRequestLinkedList::atomicCreateRequest(LockRequest lr) 
                   lock_pool->get_uninit_locks(size_to_req, memory_list); 
               }
           }
+          memhead = memory_list->head;
       }
 
-     rem_size = fetch_and_decrement((uint64_t*)&(memhead->data.size));
+     rem_size = (int)fetch_and_decrement((uint64_t*)&(memhead->data.size));
   } while (rem_size < 0);
 
   if (rem_size == 0) allocating = 0;
