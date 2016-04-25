@@ -1,5 +1,5 @@
 CXX=g++
-CXXFLAGS=-pthread -g --std=c++11 -I$(CURDIR)
+CXXFLAGS=-pthread -g --std=c++11 -I$(CURDIR) -O3
 
 DIRS=util lock_managers hashtable tester
 SOURCES :=
