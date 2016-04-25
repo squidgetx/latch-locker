@@ -81,7 +81,7 @@ void LatchedLockManager::Release(Txn* txn, const Key key) {
   }
 
   int mode = current->data.mode_;
-  assert(current->data.state_ == ACTIVE);
+  //assert(current->data.state_ == ACTIVE);
   TNode<LockRequest> * next = current->next;
   list->deleteRequest(current);
 
