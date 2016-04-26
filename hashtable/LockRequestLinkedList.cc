@@ -11,12 +11,13 @@ LockRequestLinkedList::LockRequestLinkedList(LockPool * lock_pool, int init_mem)
   size_to_req = 2*init_mem;
 }
 
-void LockRequestLinkedList::insertRequest(LockRequest lr)
+TNode<LockRequest>* LockRequestLinkedList::insertRequest(LockRequest lr)
 {
   // Create and append the new lock request. Assumes exclusive/atomic
   // access to the list (caller is responsible for this)
   TNode<LockRequest> * node_mem = createRequest(lr);
   append(node_mem);
+  return node_mem;
 }
 
 void LockRequestLinkedList::deleteRequest(TNode<LockRequest>* lr)

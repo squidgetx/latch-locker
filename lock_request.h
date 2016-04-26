@@ -23,6 +23,7 @@ struct LockRequest {
   Txn* txn_;       // Pointer to txn requesting the lock.
   LockMode mode_;  // Specifies whether this is a read or write lock request.
   LockState state_;
+  pthread_cond_t condvar_;
 };
 
 #endif

@@ -3,9 +3,8 @@
 
 void Txn::Execute(LockManager *lm) {
 	// acquire phase
-	while (lr_queue.size()) {
-		std::pair<Key, LockRequest> p = lr_queue.front();
-		lr_queue.pop();
+	for (int i = 0; i < lr_vector.size(); i++) {
+		std::pair<Key, LockRequest> p = lr_vector[i];
 
 		Key k = p.first;
 		LockRequest r = p.second;
@@ -17,9 +16,8 @@ void Txn::Execute(LockManager *lm) {
 	}
 
 	// release phase
-	while (lr_queue.size()) {
-	  std::pair<Key, LockRequest> p = lr_queue.front();
-	  lr_queue.pop();
+	for (int i = 0; i < lr_vector.size(); i++) {
+	  std::pair<Key, LockRequest> p = lr_vector[i];
 	  Key k = p.first;
 	  LockRequest r = p.second;
 	  lm->Release(r.txn_, k);

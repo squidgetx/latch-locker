@@ -19,10 +19,9 @@ bool LatchedLockManager::WriteLock(Txn* txn, const Key key) {
     newreq.state_ = ACTIVE;
   }
 
-  list->insertRequest(newreq);
+  TNode<LockRequest>* newnode = list->insertRequest(newreq);
 
-
-  return (newreq.state_ == ACTIVE);
+  while (newreq.state_ != ACTIVE) guard.wait(&(newnode->data.condvar_));  return true;
 }
 
 bool LatchedLockManager::ReadLock(Txn* txn, const Key key) {
@@ -49,9 +48,10 @@ bool LatchedLockManager::ReadLock(Txn* txn, const Key key) {
     }
   }
 
-  list->insertRequest(newreq);
+  TNode<LockRequest>* newnode = list->insertRequest(newreq);
 
-  return (newreq.state_ == ACTIVE);
+  while (newreq.state_ != ACTIVE) guard.wait(&(newnode->data.condvar_));
+  return true;
 }
 
 void LatchedLockManager::Release(Txn* txn, const Key key) {
@@ -108,12 +108,15 @@ void LatchedLockManager::Release(Txn* txn, const Key key) {
       if (next->data.mode_ != SHARED) {
         break;
       }
-      next->data.state_ = ACTIVE;
+    next->data.state_ = ACTIVE;
+    pthread_cond_signal(&(next->data.condvar_));
     }
 
   } else if (firstLockHolder) {
     // Just grant to the lock to this request (exclusive lock)
     next->data.state_ = ACTIVE;
+    pthread_cond_signal(&(next->data.condvar_));
+
   }
 
 }

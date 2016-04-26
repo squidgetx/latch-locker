@@ -18,18 +18,11 @@ static inline double GetTime() {
 }
 
 struct txn_handler {
-  pthread_mutex_t *queue_mutex_;
   std::queue<Txn*> *txn_queue_;
   LockManager *lm_;
-  txn_handler(pthread_mutex_t *m, std::queue<Txn*> *t,
-      LockManager *l) : queue_mutex_(m), txn_queue_(t), lm_(l) {}
+  txn_handler(std::queue<Txn*> *t,
+      LockManager *l) : txn_queue_(t), lm_(l) {}
 };
-
-void clear( std::queue<Txn*> &q )
-{
-   std::queue<Txn*> empty;
-   std::swap( q, empty );
-}
 
 Tester::Tester() {
 }
@@ -37,10 +30,10 @@ Tester::Tester() {
 // run different tests
 void Tester::Run() {
   Txn *txn;
-  std::queue<Txn*> transactions;
+  std::vector<Txn*> transactions;
 
-  int m = 1000; // transactions per benchmarktest
-  int n = 10000; // number of lock requests per transaction
+  int m = TRANSACTIONS_PER_TEST; // transactions per benchmarktest
+  int n = REQUESTS_PER_TRANSACTION; // number of lock requests per transaction
   int k; // number of distinct keys
   double w; // percentage of write locks
 
@@ -48,98 +41,106 @@ void Tester::Run() {
   w = 0.0;
   std::cout << "high num of different keys, all shared locks " << std::endl;
   for (int i = 0; i < m; i++) {
-    transactions.push(GenerateTransaction(n, k, w));
-    Benchmark(transactions);
-    clear(transactions);
+    transactions.push_back(GenerateTransaction(n, k, w));
   }
+  Benchmark(transactions);
+  transactions.clear();
   std::cout << "======" << std::endl;
 
   k = 100;
   w = 1.0;
   std::cout << "high num of different keys, all exclusive locks " << std::endl;
   for (int i = 0; i < m; i++) {
-    transactions.push(GenerateTransaction(n, k, w));
-    Benchmark(transactions);
-    clear(transactions);
+    transactions.push_back(GenerateTransaction(n, k, w));
   }
+  Benchmark(transactions);
+  transactions.clear();
   std::cout << "======" << std::endl;
 
   k = 100;
   w = 0.5;
   std::cout << "high num of different keys, mixed locks 50/50 " << std::endl;
   for (int i = 0; i < m; i++) {
-    transactions.push(GenerateTransaction(n, k, w));
-    Benchmark(transactions);
-    clear(transactions);
+    transactions.push_back(GenerateTransaction(n, k, w));
   }
+  Benchmark(transactions);
+  transactions.clear();
   std::cout << "======" << std::endl;
 
   k = 5;
   w = 0.0;
   std::cout << "low num of different keys, all shared locks " << std::endl;
   for (int i = 0; i < m; i++) {
-    transactions.push(GenerateTransaction(n, k, w));
-    Benchmark(transactions);
-    clear(transactions);
+    transactions.push_back(GenerateTransaction(n, k, w));
   }
+  Benchmark(transactions);
+  transactions.clear();
   std::cout << "======" << std::endl;
 
   k = 5;
   w = 1.0;
   std::cout << "low num of different keys, all exclusive locks " << std::endl;
   for (int i = 0; i < m; i++) {
-    transactions.push(GenerateTransaction(n, k, w));
-    Benchmark(transactions);
-    clear(transactions);
+    transactions.push_back(GenerateTransaction(n, k, w));
   }
+  Benchmark(transactions);
+  transactions.clear();
   std::cout << "======" << std::endl;
 
   k = 5;
   w = 0.5;
   std::cout << "low num of different keys, mixed locks 50/50" << std::endl;
   for (int i = 0; i < m; i++) {
-    transactions.push(GenerateTransaction(n, k, w));
-    Benchmark(transactions);
-    clear(transactions);
+    transactions.push_back(GenerateTransaction(n, k, w));
   }
+  Benchmark(transactions);
+  transactions.clear();
   std::cout << "======" << std::endl;
 }
 
 Txn *Tester::GenerateTransaction(int n, int k, double w) {
-  std::queue<std::pair<Key, LockRequest>> lock_requests;
-  Txn *t = new Txn(txn_counter, lock_requests);
+  std::vector<std::pair<Key, LockRequest>> lock_requests;
 
   for (int i = 0; i < n; i++) {
     Key key = 1 + (rand() % (int)k);
     LockMode mode = (((double) rand() / (RAND_MAX)) <= w) ? EXCLUSIVE : SHARED;
-    LockRequest r = LockRequest(mode, t);
-    lock_requests.push(std::make_pair(key, r));
+    LockRequest r = LockRequest(mode, NULL);
+    lock_requests.push_back(std::make_pair(key, r));
+  }
+
+  Txn *t = new Txn(txn_counter, lock_requests);
+
+  for (int i = 0; i < n; i++) {
+    t->lr_vector[i].second.txn_ = t;
   }
 
   return t;
 }
 
 void *threaded_transactions_executor(void *args) {
-  // acquire phase
+  // Record start time.
+  double start = GetTime();
+
   struct txn_handler *tha = (struct txn_handler *)args;
 
-  while (tha->txn_queue_->size()) {
-    pthread_mutex_lock(tha->queue_mutex_);
-    if (tha->txn_queue_->size() == 0) {
-      pthread_mutex_unlock(tha->queue_mutex_);
-      break;
-    }
-    Txn *t = tha->txn_queue_->front();
-    tha->txn_queue_->pop();
-    pthread_mutex_unlock(tha->queue_mutex_);
-    
-    t->Execute(tha->lm_);
+  int num_txns = tha->txn_queue_->size();
 
+  while (tha->txn_queue_->size()) {
+    Txn *t = tha->txn_queue_->front();
+    tha->txn_queue_->pop();    
+    t->Execute(tha->lm_);
   }
-  pthread_exit(NULL);
+
+  // Record end time
+  double end = GetTime();
+
+  double *throughput = new double;
+  *throughput = num_txns / (end-start);
+
+  return (void*) throughput;
 }
 
-void Tester::Benchmark(std::queue<Txn*> transactions) {
+void Tester::Benchmark(std::vector<Txn*> transactions) {
   LockManager *lm;
   // three types of mgr_s
   std::string types[] = { "Global Lock", "Key Lock", "Latch-Free"};
@@ -158,26 +159,30 @@ void Tester::Benchmark(std::queue<Txn*> transactions) {
         break;
     }
 
-    struct txn_handler tha(&queue_mutex, &transactions, lm);
-
-    double throughput;
-
-    // Record start time.
-    double start = GetTime();
+    int throughput = 0;
 
     for (int j = 0; j < NUM_THREADS; j++) {
+
+      std::queue<Txn*> txns;
+      for (int k = 0; k < TRANSACTIONS_PER_TEST/NUM_THREADS; k++) {
+        txns.push(transactions[TRANSACTIONS_PER_TEST/NUM_THREADS*j + k]);
+      }
+
+      struct txn_handler tha(&txns, lm);
       pthread_create(&pthreads[j], NULL, threaded_transactions_executor, (void*)&tha);
     }
 
     for (int j = 0; j < NUM_THREADS; j++) {
-      pthread_join(pthreads[j], NULL);
+      double *tput;
+      pthread_join(pthreads[j], (void**)&tput);
+      throughput += *tput;
+      std::cout << *tput << std::endl;
+      delete tput;
     }
 
-    // Record end time
-    double end = GetTime();
-    throughput = transactions.size() / (end-start);
+    throughput /= NUM_THREADS;
 
     std::cout << "Lock Manager: " << types[i] << std::endl;
-    std::cout << "    Txn throughput / sec: " << int(throughput) << std::endl;
+    std::cout << "    Txn throughput / sec: " << throughput << std::endl;
   }
 }

@@ -15,7 +15,7 @@ class LockRequestLinkedList: private TLinkedList<LockRequest>
 {
 public:
   LockRequestLinkedList(LockPool* lock_pool, int init_mem);
-  void insertRequest(LockRequest lr);
+  TNode<LockRequest>* insertRequest(LockRequest lr);
   void deleteRequest(TNode<LockRequest>* lr);
   TNode<LockRequest>* atomic_lock_insert(LockRequest lr);
   void atomic_synchronize();
