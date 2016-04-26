@@ -11,7 +11,7 @@
 #include "lock_managers/latch_free_lock_manager.h"
 
 #include "util/common.h"
-#include "txn.h"
+#include "txn/txn.h"
 #include "lock_request.h"
 
 class Tester {
@@ -20,13 +20,14 @@ public:
   void Run();
 private:
   // one LockRequest Sequence
-  void Benchmark(std::vector<std::pair<Key, LockRequest>> lock_requests);
-  std::vector<std::pair<Key, LockRequest>> GenerateRequests(int n, int k, double w);
+  void Benchmark(std::queue<Txn*> transactions);
+  Txn *GenerateTransaction(int n, int k, double w);
 
   std::queue<std::pair<Key, LockRequest>> lr_queue;
   pthread_mutex_t queue_mutex = PTHREAD_MUTEX_INITIALIZER;
   pthread_t pthreads[4];
-  int NUM_THREADS=4;
+  int NUM_THREADS = 4;
+  int txn_counter = 0;
 };
 
 #endif // TESTER_TESTER_H

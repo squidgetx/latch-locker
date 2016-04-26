@@ -3,7 +3,7 @@
 
 #include "lock_managers/latched_lock_manager.h"
 
-#include "txn.h"
+#include "txn/txn.h"
 #include "util/mutex.h"
 
 // Version of the LockManager using a global mutex

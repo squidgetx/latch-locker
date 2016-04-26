@@ -4,7 +4,7 @@
 #include "lock_managers/lock_manager.h"
 #include "util/mutex.h"
 #include "util/common.h"
-#include "txn.h"
+#include "txn/txn.h"
 
 // Version of the LockManager using a global mutex
 class LatchedLockManager : public LockManager {

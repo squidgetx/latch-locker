@@ -1,6 +1,7 @@
 #ifndef HASHTABLE_TNODE_H
 #define HASHTABLE_TNODE_H
 #include <stdint.h>
+#include <cstdlib>
 
 template <typename T>
 struct TNode // Node is a private implementation detail

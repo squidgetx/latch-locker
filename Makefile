@@ -1,7 +1,7 @@
 CXX=g++
 CXXFLAGS=-pthread -g --std=c++11 -I$(CURDIR) -O3
 
-DIRS=util lock_managers hashtable tester
+DIRS=util lock_managers hashtable tester txn
 SOURCES :=
 BINS :=
 OBJECTS = $(patsubst %.cc, %.o, $(SOURCES))

@@ -3,7 +3,7 @@
 #include "lock_managers/latched_lock_manager.h"
 
 #include "util/mutex.h"
-#include "txn.h"
+#include "txn/txn.h"
 
 bool LatchedLockManager::WriteLock(Txn* txn, const Key key) {
   Pthread_mutex_guard guard(KeyMutex(key));

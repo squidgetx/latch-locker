@@ -5,7 +5,9 @@
 #include "TLinkedList.h"
 #include "lock_pool.h"
 #include "util/util.h"
+#include "util/common.h"
 #include "lock_request.h"
+#include "txn/txn.h"
 
 #define DEFAULT_LIST_SIZE 5
 

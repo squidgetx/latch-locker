@@ -8,7 +8,7 @@
 #include "lock_managers/key_lock_manager.h"
 #include "lock_managers/latch_free_lock_manager.h"
 #include "util/common.h"
-#include "txn.h"
+#include "txn/txn.h"
 #include "lock_request.h"
 #include <iostream>
 #include <sys/time.h>

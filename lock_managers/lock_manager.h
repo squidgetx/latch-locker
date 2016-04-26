@@ -3,14 +3,13 @@
 #ifndef _LOCK_MANAGER_H_
 #define _LOCK_MANAGER_H_
 
-#include <pthread.h>
+class Txn;
 
+#include <pthread.h>
 #include "util/common.h"
 #include "hashtable/LockRequestLinkedList.h"
 #include "hashtable/hashtable.h"
-
 #include "lock_request.h"
-#include "txn.h"
 
 // The number of buckets lock managers allocate in their hash tables.
 class LockManager {

@@ -1,7 +1,7 @@
 #ifndef _LOCK_REQUEST_H_
 #define _LOCK_REQUEST_H_
 
-#include "txn.h"
+class Txn;
 
 // This interface supports locks being held in both read/shared and
 // write/exclusive modes.
