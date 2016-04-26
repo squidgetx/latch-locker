@@ -21,7 +21,7 @@ void Txn::Execute(LockManager *lm) {
 	for (int i = 0; i < keys.size(); i++) {
 	  std::pair<Key, LockMode> p = keys[i];
 	  Key k = p.first;
-    std::cout << "releasing key " << k << std::endl;
+   // std::cout << "releasing key " << k << std::endl;
 	  lm->Release(this, k);
 	}
 }

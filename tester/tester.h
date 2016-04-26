@@ -28,7 +28,7 @@ private:
   int txn_counter = 0;
 
 
-  int TRANSACTIONS_PER_TEST = 1000000;
+  int TRANSACTIONS_PER_TEST = 100000;
   int REQUESTS_PER_TRANSACTION = 20;
   int KEYS = 10;
 };

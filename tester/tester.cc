@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <iterator>
 #include <random>
+#include <algorithm>
 
 #include "lock_managers/global_lock_manager.h"
 #include "lock_managers/lock_manager.h"
@@ -99,6 +100,10 @@ void Tester::Run() {
   std::cout << "======" << std::endl;*/
 }
 
+bool comparator(std::pair<Key, LockMode> a, std::pair<Key, LockMode> b) {
+  return (a.first > b.first);
+}
+
 Txn *Tester::GenerateTransaction(int n, int k, double w) {
   // generates a single txn that acts on N keys
   // choosing the keys from a pool of [0,K]
@@ -113,6 +118,7 @@ Txn *Tester::GenerateTransaction(int n, int k, double w) {
     lock_requests.push_back(std::make_pair(key, mode));
   }
 //kJ  std::cout << std::endl;
+  std::sort(lock_requests.begin(), lock_requests.end(), comparator);
 
   Txn *t = new Txn(txn_counter, lock_requests);
   txn_counter++;
@@ -127,6 +133,7 @@ void *threaded_transactions_executor(void *args) {
   struct txn_handler *tha = (struct txn_handler *)args;
 
   int num_txns = tha->txn_queue_->size();
+ // std::cout << num_txns << std::endl;
 
   while (tha->txn_queue_->size()) {
     Txn *t = tha->txn_queue_->front();
@@ -171,8 +178,8 @@ void Tester::Benchmark(std::vector<Txn*> * transactions) {
         txns->push((*transactions)[TRANSACTIONS_PER_TEST/NUM_THREADS*j + k]);
       }
 
-      struct txn_handler tha(txns, lm);
-      pthread_create(&pthreads[j], NULL, threaded_transactions_executor, (void*)&tha);
+      struct txn_handler * tha = new struct txn_handler(txns, lm);
+      pthread_create(&pthreads[j], NULL, threaded_transactions_executor, (void*) tha);
     }
 
     for (int j = 0; j < NUM_THREADS; j++) {
