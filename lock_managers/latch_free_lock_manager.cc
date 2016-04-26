@@ -11,17 +11,28 @@ bool conflicts(LockRequest o, LockRequest n) {
   return false;
 }
 
-TNode<LockRequest>* LatchFreeLockManager::WriteLock(Txn* txn, const Key key) {
+TNode<LockRequest>* LatchFreeLockManager::TryWriteLock(Txn* txn, const Key key) {
   LockRequest n_lock = LockRequest(EXCLUSIVE, txn);
   return AcquireLock(n_lock, key);
 }
-
-TNode<LockRequest>* LatchFreeLockManager::ReadLock(Txn* txn, const Key key) {
+TNode<LockRequest>* LatchFreeLockManager::WriteLock(Txn* txn, const Key key) {
+  TNode<LockRequest>* newnode = TryWriteLock(txn, key);
+  while (newnode->data.state_ != ACTIVE) do_pause();
+  return newnode;
+}
+TNode<LockRequest>* LatchFreeLockManager::TryReadLock(Txn* txn, const Key key) {
   LockRequest n_lock = LockRequest(SHARED, txn);
   return AcquireLock(n_lock, key);
 }
+TNode<LockRequest>* LatchFreeLockManager::ReadLock(Txn* txn, const Key key) {
+  TNode<LockRequest>* newnode = TryReadLock(txn, key);
+  while (newnode->data.state_ != ACTIVE) do_pause();
+  return newnode;
+}
 
-TNode<LockRequest>* LatchFreeLockManager::TryAcquireLock(LockRequest n_lock, const Key key) {
+
+
+TNode<LockRequest>* LatchFreeLockManager::AcquireLock(LockRequest n_lock, const Key key) {
   n_lock.state_ = ACTIVE;
   LockRequestLinkedList * list = lock_table.get_list(key);
   TNode<LockRequest>* in = list->atomic_lock_insert(n_lock);
@@ -44,13 +55,6 @@ TNode<LockRequest>* LatchFreeLockManager::TryAcquireLock(LockRequest n_lock, con
     req = list->latch_free_next(req);
   }
   return in;
-}
-
-TNode<LockRequest>* LatchFreeLockManager::AcquireLock(LockRequest n_lock, const Key key) {
-  TNode<LockRequest>* newnode = TryAcquireLock(n_lock, key);
-  //list->printList();
-  while(newnode->data.state_ != ACTIVE) do_pause();
-  return newnode;
 }
 
 void LatchFreeLockManager::Release(Txn* txn, const Key key) {
