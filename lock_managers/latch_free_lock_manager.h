@@ -10,12 +10,14 @@ class LatchFreeLockManager : public LockManager {
     explicit LatchFreeLockManager(int nbuckets) : LockManager(nbuckets) {}
     inline virtual ~LatchFreeLockManager() {}
 
-    bool ReadLock(Txn* txn, const Key key);
-    bool WriteLock(Txn* txn, const Key key);
+    TNode<LockRequest>* ReadLock(Txn* txn, const Key key);
+    TNode<LockRequest>* WriteLock(Txn* txn, const Key key);
     void Release(Txn* txn, const Key key);
     virtual LockState CheckState(const Txn *txn, const Key key);
   private:
-    bool AcquireLock(LockRequest n_lock, const Key key);
+    TNode<LockRequest>* AcquireLock(LockRequest n_lock, const Key key);
+    TNode<LockRequest>* TryAcquireLock(LockRequest n_lock, const Key key);
+
 
 };
 

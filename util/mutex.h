@@ -24,9 +24,6 @@ public:
     pthread_mutex_unlock(&mutex_handle);
   }
 
-  void wait(pthread_cond_t* cond) {
-    pthread_cond_wait(cond,&mutex_handle);
-  }
 private:
   // Wow this is janky.
   pthread_mutex_t mutex_handle;
@@ -43,10 +40,6 @@ public:
 
   ~Pthread_mutex_guard() {
     mutex.unlock();
-  }
-
-  void wait(pthread_cond_t* cond) {
-    mutex.wait(cond);
   }
 
   Pthread_mutex_guard& operator=(const Pthread_mutex_guard& rhs) = delete;
