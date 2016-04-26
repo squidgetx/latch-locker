@@ -2,6 +2,8 @@
 #define _LOCK_REQUEST_H_
 
 class Txn;
+#include <pthread.h>
+
 
 // This interface supports locks being held in both read/shared and
 // write/exclusive modes.

@@ -47,6 +47,7 @@ void Tester::Run() {
   transactions.clear();
   std::cout << "======" << std::endl;
 
+  /*
   k = 100;
   w = 1.0;
   std::cout << "high num of different keys, all exclusive locks " << std::endl;
@@ -95,24 +96,23 @@ void Tester::Run() {
   }
   Benchmark(transactions);
   transactions.clear();
-  std::cout << "======" << std::endl;
+  std::cout << "======" << std::endl;*/
 }
 
 Txn *Tester::GenerateTransaction(int n, int k, double w) {
-  std::vector<std::pair<Key, LockRequest>> lock_requests;
+  // generates a single txn that acts on N keys
+  // choosing the keys from a pool of [0,K]
+  // w is proportion of write keys
+  std::vector<std::pair<Key, LockMode>> lock_requests;
 
   for (int i = 0; i < n; i++) {
     Key key = 1 + (rand() % (int)k);
     LockMode mode = (((double) rand() / (RAND_MAX)) <= w) ? EXCLUSIVE : SHARED;
-    LockRequest r = LockRequest(mode, NULL);
-    lock_requests.push_back(std::make_pair(key, r));
+    lock_requests.push_back(std::make_pair(key, mode));
   }
 
   Txn *t = new Txn(txn_counter, lock_requests);
-
-  for (int i = 0; i < n; i++) {
-    t->lr_vector[i].second.txn_ = t;
-  }
+  txn_counter++;
 
   return t;
 }

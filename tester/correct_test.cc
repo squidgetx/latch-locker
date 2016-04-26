@@ -75,8 +75,7 @@ void CorrectTester::MultithreadedLocking(LockManager *lm) {
   // Have each thread request a shared lock and confirm each obtain
   // it successfully
   for (int i = 0; i < NUM_THREADS; i++) {
-    std::vector<std::pair<Key, LockRequest>> q;
-    Txn * txn = new Txn(i, q);
+    Txn * txn = new Txn(i);
     std::queue<std::pair<int, bool>> * request_q = new std::queue<std::pair<int, bool>>();
     std::pair<int, bool> * p = new std::pair<int, bool>(1, false);
     request_q->push(*p);
@@ -98,8 +97,7 @@ void CorrectTester::MultithreadedLocking(LockManager *lm) {
   // all write locks, same key. Make sure only 1 thread got a lock
 
   for (int i = 0; i < NUM_THREADS; i++) {
-    std::vector<std::pair<Key, LockRequest>> q;
-    Txn * txn = new Txn(i, q);
+    Txn * txn = new Txn(i);
     std::queue<std::pair<int, bool>> * request_q = new std::queue<std::pair<int, bool>>();
     std::pair<int, bool> * p = new std::pair<int, bool>(1, true);
     request_q->push(*p);
@@ -122,11 +120,10 @@ void CorrectTester::MultithreadedLocking(LockManager *lm) {
 
 void CorrectTester::SimpleLocking(LockManager * lm) {
   BEGIN;
-  std::vector<std::pair<Key, LockRequest>> q;
-  Txn * t1 = new Txn(1,q);
-  Txn * t2 = new Txn(2,q);
-  Txn * t3 = new Txn(3,q);
-  Txn * t4 = new Txn(4,q);
+  Txn * t1 = new Txn(1);
+  Txn * t2 = new Txn(2);
+  Txn * t3 = new Txn(3);
+  Txn * t4 = new Txn(4);
   std::cout << "Shared locks don't need to wait" << std::endl;
   bool result = lm->ReadLock(t1, 1);
   EXPECT_TRUE(result);
@@ -170,11 +167,10 @@ void CorrectTester::SimpleLocking(LockManager * lm) {
  */
 void CorrectTester::ReleaseCases(LockManager *lm) {
   BEGIN;
-  std::vector<std::pair<Key, LockRequest>> q;
-  Txn *t1 = new Txn(1, q);
-  Txn *t2 = new Txn(2, q);
-  Txn *t3 = new Txn(3, q);
-  Txn *t4 = new Txn(4, q);
+  Txn *t1 = new Txn(1);
+  Txn *t2 = new Txn(2);
+  Txn *t3 = new Txn(3);
+  Txn *t4 = new Txn(4);
 
   // Notation for all test cases is a sequence of locks, with the lock to be
   // released in brackets.
