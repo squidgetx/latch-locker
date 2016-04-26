@@ -30,21 +30,21 @@ Tester::Tester() {
 // run different tests
 void Tester::Run() {
   Txn *txn;
-  std::vector<Txn*> transactions;
+  std::vector<Txn*> * transactions = new std::vector<Txn*>();
 
   int m = TRANSACTIONS_PER_TEST; // transactions per benchmarktest
   int n = REQUESTS_PER_TRANSACTION; // number of lock requests per transaction
   int k; // number of distinct keys
   double w; // percentage of write locks
 
-  k = 100;
+  k = 99;
   w = 0.0;
   std::cout << "high num of different keys, all shared locks " << std::endl;
   for (int i = 0; i < m; i++) {
-    transactions.push_back(GenerateTransaction(n, k, w));
+    transactions->push_back(GenerateTransaction(n, k, w));
   }
   Benchmark(transactions);
-  transactions.clear();
+  transactions->clear();
   std::cout << "======" << std::endl;
 
   /*
@@ -103,13 +103,16 @@ Txn *Tester::GenerateTransaction(int n, int k, double w) {
   // generates a single txn that acts on N keys
   // choosing the keys from a pool of [0,K]
   // w is proportion of write keys
+//  std::cout << "Generating Txn: " << txn_counter << " : ";
   std::vector<std::pair<Key, LockMode>> lock_requests;
 
   for (int i = 0; i < n; i++) {
     Key key = 1 + (rand() % (int)k);
     LockMode mode = (((double) rand() / (RAND_MAX)) <= w) ? EXCLUSIVE : SHARED;
+ //   std::cout << key << " ";
     lock_requests.push_back(std::make_pair(key, mode));
   }
+//kJ  std::cout << std::endl;
 
   Txn *t = new Txn(txn_counter, lock_requests);
   txn_counter++;
@@ -140,7 +143,7 @@ void *threaded_transactions_executor(void *args) {
   return (void*) throughput;
 }
 
-void Tester::Benchmark(std::vector<Txn*> transactions) {
+void Tester::Benchmark(std::vector<Txn*> * transactions) {
   LockManager *lm;
   // three types of mgr_s
   std::string types[] = { "Global Lock", "Key Lock", "Latch-Free"};
@@ -163,12 +166,12 @@ void Tester::Benchmark(std::vector<Txn*> transactions) {
 
     for (int j = 0; j < NUM_THREADS; j++) {
 
-      std::queue<Txn*> txns;
+      std::queue<Txn*> * txns = new std::queue<Txn*>();
       for (int k = 0; k < TRANSACTIONS_PER_TEST/NUM_THREADS; k++) {
-        txns.push(transactions[TRANSACTIONS_PER_TEST/NUM_THREADS*j + k]);
+        txns->push((*transactions)[TRANSACTIONS_PER_TEST/NUM_THREADS*j + k]);
       }
 
-      struct txn_handler tha(&txns, lm);
+      struct txn_handler tha(txns, lm);
       pthread_create(&pthreads[j], NULL, threaded_transactions_executor, (void*)&tha);
     }
 
