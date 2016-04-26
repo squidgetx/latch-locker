@@ -2,6 +2,7 @@
 #define _LOCK_REQUEST_H_
 
 #include "txn.h"
+#include <pthread.h>
 
 // This interface supports locks being held in both read/shared and
 // write/exclusive modes.
@@ -23,6 +24,7 @@ struct LockRequest {
   Txn* txn_;       // Pointer to txn requesting the lock.
   LockMode mode_;  // Specifies whether this is a read or write lock request.
   LockState state_;
+  pthread_cond_t condvar_;
 };
 
 #endif
