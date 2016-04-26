@@ -12,11 +12,13 @@ class LatchFreeLockManager : public LockManager {
 
     TNode<LockRequest>* ReadLock(Txn* txn, const Key key);
     TNode<LockRequest>* WriteLock(Txn* txn, const Key key);
+    TNode<LockRequest>* TryReadLock(Txn* txn, const Key key);
+    TNode<LockRequest>* TryWriteLock(Txn* txn, const Key key);
+
     void Release(Txn* txn, const Key key);
     virtual LockState CheckState(const Txn *txn, const Key key);
   private:
     TNode<LockRequest>* AcquireLock(LockRequest n_lock, const Key key);
-    TNode<LockRequest>* TryAcquireLock(LockRequest n_lock, const Key key);
 
 
 };

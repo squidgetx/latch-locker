@@ -4,29 +4,27 @@
 #ifndef UTIL_MUTEX_H
 #define UTIL_MUTEX_H
 
-
-#include <pthread.h>
-
+#include "util/util.h"
 /**
  * Provides mutual exclusion, using pthread.
  */
 class Pthread_mutex {
 public:
   Pthread_mutex() {
-    pthread_mutex_init(&mutex_handle, NULL);
+    mutex_handle = 0;
   }
 
   void lock() {
-    pthread_mutex_lock(&mutex_handle);
+    jose_lock(&mutex_handle);
   }
 
   void unlock() {
-    pthread_mutex_unlock(&mutex_handle);
+    jose_unlock(&mutex_handle);
   }
 
 private:
   // Wow this is janky.
-  pthread_mutex_t mutex_handle;
+  uint64_t mutex_handle;
 };
 
 /**

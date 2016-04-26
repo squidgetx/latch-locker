@@ -17,6 +17,10 @@ class LockManager {
   LockManager(int nbuckets) : lock_table(nbuckets) {}
   virtual ~LockManager() {}
 
+  virtual TNode<LockRequest>* TryWriteLock(Txn* txn, const Key key) = 0;
+  virtual TNode<LockRequest>* TryReadLock(Txn* txn, const Key key) = 0;
+
+
   // Attempts to grant a read lock to the specified transaction, enqueueing
   // request in lock table. Returns true if lock is immediately granted, else
   // returns false.
