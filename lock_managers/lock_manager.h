@@ -23,7 +23,7 @@ class LockManager {
   //
   // Requires: Neither ReadLock nor WriteLock has previously been called with
   //           this txn and key.
-  virtual bool ReadLock(Txn* txn, const Key key) = 0;
+  virtual TNode<LockRequest>* ReadLock(Txn* txn, const Key key) = 0;
 
   // Attempts to grant a write lock to the specified transaction, enqueueing
   // request in lock table. Returns true if lock is immediately granted, else
@@ -31,7 +31,7 @@ class LockManager {
   //
   // Requires: Neither ReadLock nor WriteLock has previously been called with
   //           this txn and key.
-  virtual bool WriteLock(Txn* txn, const Key key) = 0;
+  virtual TNode<LockRequest>* WriteLock(Txn* txn, const Key key) = 0;
 
   // Releases lock held by 'txn' on 'key', or cancels any pending request for
   // a lock on 'key' by 'txn'. If 'txn' held an EXCLUSIVE lock on 'key' (or was

@@ -12,8 +12,11 @@ class LatchedLockManager : public LockManager {
   explicit LatchedLockManager(int nbuckets) : LockManager(nbuckets) {}
   inline virtual ~LatchedLockManager() {}
 
-  virtual bool ReadLock(Txn* txn, const Key key);
-  virtual bool WriteLock(Txn* txn, const Key key);
+  virtual TNode<LockRequest>* TryWriteLock(Txn* txn, const Key key);
+  virtual TNode<LockRequest>* TryReadLock(Txn* txn, const Key key);
+
+  virtual TNode<LockRequest>* ReadLock(Txn* txn, const Key key);
+  virtual TNode<LockRequest>* WriteLock(Txn* txn, const Key key);
   virtual void Release(Txn* txn, const Key key);
   //virtual LockMode Status(const Key& key, vector<int>* owners);
   virtual LockState CheckState(const Txn *txn, const Key key);
