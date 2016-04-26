@@ -3,7 +3,10 @@
 #include <pthread.h>
 #include <queue>
 
-//int NUM_THREADS = 10;
+
+bool lockGranted(const TNode<LockRequest> *lr) {
+  return lr->data.state_ == ACTIVE;
+}
 
 CorrectTester::CorrectTester() {
 
@@ -35,13 +38,13 @@ void *t_lock_acquirer(void *args) {
     lha->queue_->pop();
 
     if (p.second) {
-      if (lha->lm_->WriteLock(lha->txn_, p.first)) {
+      if (lockGranted(lha->lm_->TryWriteLock(lha->txn_, p.first))) {
         (*grants)++;
       } else {
         rejects++;
       }
     } else {
-      if (lha->lm_->ReadLock(lha->txn_, p.first)) {
+      if (lockGranted(lha->lm_->TryReadLock(lha->txn_, p.first))) {
         (*grants)++;
       } else {
         rejects++;
@@ -128,36 +131,34 @@ void CorrectTester::SimpleLocking(LockManager * lm) {
   Txn * t3 = new Txn(3,q);
   Txn * t4 = new Txn(4,q);
   std::cout << "Shared locks don't need to wait" << std::endl;
-  bool result = lm->ReadLock(t1, 1);
-  EXPECT_TRUE(result);
-  result = lm->ReadLock(t2, 1);
-  EXPECT_TRUE(result);
+  EXPECT_TRUE(lockGranted(lm->TryReadLock(t1, 1)));
+  EXPECT_TRUE(lockGranted(lm->TryReadLock(t2, 1)));
 
   std::cout << "Locks release without breaking" << std::endl;
   lm->Release(t1, 1);
   lm->Release(t2, 1);
 
   std::cout << "First Exclusive lock doesn't need to wait" << std::endl;
-  EXPECT_TRUE(lm->WriteLock(t1, 1));
+  EXPECT_TRUE(lockGranted(lm->TryWriteLock(t1, 1)));
 
   std::cout << "Second exclusive lock needs to wait" << std::endl;
-  EXPECT_FALSE(lm->WriteLock(t2, 1 ));
+  EXPECT_FALSE(lockGranted(lm->TryWriteLock(t2, 1)));
 
   std::cout << "Shared lock doesn't need to wait after releasing exclusive" << std::endl;
   lm->Release(t1, 1);
   lm->Release(t2, 1);
-  EXPECT_TRUE(lm->ReadLock(t1, 1));
+  EXPECT_TRUE(lockGranted(lm->TryReadLock(t1, 1)));
 
   std::cout << "Additional exclusive must wait" << std::endl;
-  EXPECT_FALSE(lm->WriteLock(t3, 1 ));
+  EXPECT_FALSE(lockGranted(lm->TryWriteLock(t3, 1)));
 
   std::cout << "Additional shared must wait" << std::endl;
-  EXPECT_FALSE(lm->ReadLock(t4, 1 ));
+  EXPECT_FALSE(lockGranted(lm->TryReadLock(t4, 1)));
 
   std:: cout << "Additional shared acquires if exclusive is released" << std::endl;
   lm->Release(t1, 1);
   lm->Release(t3, 1);
-  EXPECT_TRUE(lm->ReadLock(t3, 1));
+  EXPECT_TRUE(lockGranted(lm->TryReadLock(t3, 1)));
 
   lm->Release(t1,1);
   lm->Release(t3,1);
@@ -185,35 +186,38 @@ void CorrectTester::ReleaseCases(LockManager *lm) {
 
   // *[SHARED]* *SHARED* EXCLUSIVE
   // *SHARED* EXCLUSIVE
-  EXPECT_TRUE(lm->ReadLock(t1, 1));
-  EXPECT_TRUE(lm->ReadLock(t2, 1));
-  EXPECT_FALSE(lm->WriteLock(t3, 1));
+  EXPECT_TRUE(lockGranted(lm->TryReadLock(t1, 1)));
+  EXPECT_TRUE(lockGranted(lm->TryReadLock(t2, 1)));
+  EXPECT_FALSE(lockGranted(lm->TryWriteLock(t3, 1)));
 
   lm->Release(t1, 1);
-  //EXPECT_EQ(lm->CheckState(t1, 1), NOT_FOUND);
+  EXPECT_TRUE(
+      lm->CheckState(t1, 1) == NOT_FOUND || lm->CheckState(t1, 1) == OBSOLETE);
   EXPECT_EQ(lm->CheckState(t2, 1), ACTIVE);
   EXPECT_EQ(lm->CheckState(t3, 1), WAIT);
 
   // *SHARED* *[SHARED]* EXCLUSIVE
   // *SHARED* EXCLUSIVE SHARED
-  EXPECT_TRUE(lm->ReadLock(t1, 2));
-  EXPECT_TRUE(lm->ReadLock(t2, 2));
-  EXPECT_FALSE(lm->WriteLock(t3, 2));
+  EXPECT_TRUE(lockGranted(lm->TryReadLock(t1, 2)));
+  EXPECT_TRUE(lockGranted(lm->TryReadLock(t2, 2)));
+  EXPECT_FALSE(lockGranted(lm->TryWriteLock(t3, 2)));
 
   lm->Release(t2, 2);
   EXPECT_EQ(lm->CheckState(t1, 2), ACTIVE);
-  //EXPECT_EQ(lm->CheckState(t2, 2), NOT_FOUND);
+  EXPECT_TRUE(
+      lm->CheckState(t2, 2) == NOT_FOUND || lm->CheckState(t2, 2) == OBSOLETE);
   EXPECT_EQ(lm->CheckState(t3, 2), WAIT);
 
   // *[EXCLUSIVE]* SHARED SHARED EXCLUSIVE
   // *SHARED* *SHARED* EXCLUSIVE
-  EXPECT_TRUE(lm->WriteLock(t1, 3));
-  EXPECT_FALSE(lm->ReadLock(t2, 3));
-  EXPECT_FALSE(lm->ReadLock(t3, 3));
-  EXPECT_FALSE(lm->WriteLock(t4, 3));
+  EXPECT_TRUE(lockGranted(lm->TryWriteLock(t1, 3)));
+  EXPECT_FALSE(lockGranted(lm->TryReadLock(t2, 3)));
+  EXPECT_FALSE(lockGranted(lm->TryReadLock(t3, 3)));
+  EXPECT_FALSE(lockGranted(lm->TryWriteLock(t4, 3)));
 
   lm->Release(t1, 3);
-  //EXPECT_EQ(lm->CheckState(t1, 3), NOT_FOUND);
+  EXPECT_TRUE(
+      lm->CheckState(t1, 3) == NOT_FOUND || lm->CheckState(t1, 3) == OBSOLETE);
   EXPECT_EQ(lm->CheckState(t2, 3), ACTIVE);
   EXPECT_EQ(lm->CheckState(t3, 3), ACTIVE);
   EXPECT_EQ(lm->CheckState(t4, 3), WAIT);
