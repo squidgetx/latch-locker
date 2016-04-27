@@ -25,9 +25,6 @@ struct txn_handler {
       LockManager *l) : txn_queue_(t), lm_(l) {}
 };
 
-Tester::Tester() {
-}
-
 // run different tests
 void Tester::Run() {
   Txn *txn;
@@ -35,78 +32,83 @@ void Tester::Run() {
 
   int m = TRANSACTIONS_PER_TEST; // transactions per benchmarktest
   int n = REQUESTS_PER_TRANSACTION; // number of lock requests per transaction
-  double w; // percentage of write locks
+  double w = 1;
 
-  std::vector<Key> hot_set;
-  std::vector<Key> cold_set;
 
+  NUM_THREADS = 4;
+
+  std::cout << "Test contention. Fixed 4 cores" << std::endl;
   srand (time(NULL));
-  for (int i = 0; i < KEYS; i++) {
-    if ((rand() % 100) < HS_SIZE * 100) {
-      hot_set.push_back(i);
-    } else {
-      cold_set.push_back(i);
+
+  // vary contention
+  for (double hs_size = 0.05; hs_size > 0.0001; hs_size/=2) {
+    std::vector<Key> hot_set;
+    std::vector<Key> cold_set;
+    for (int i = 0; i < KEYS; i++) {
+      if ((rand() % 100) < hs_size * 100) {
+        hot_set.push_back(i);
+      } else {
+        cold_set.push_back(i);
+      }
     }
+
+    std::cout << "Contention: Hot set size " << hs_size << ". All write locks " << std::endl;
+    for (int i = 0; i < m; i++) {
+      transactions->push_back(GenerateTransaction(n, w, hot_set, cold_set));
+    }
+    Benchmark(transactions);
+    transactions->clear();
+    std::cout << "======" << std::endl;
   }
 
-  w = 0.0;
-  std::cout << "high num of different keys, all shared locks " << std::endl;
-  for (int i = 0; i < m; i++) {
-    transactions->push_back(GenerateTransaction(n, w, hot_set, cold_set));
-  }
-  Benchmark(transactions);
-  transactions->clear();
-  std::cout << "======" << std::endl;
 
-  w = 1.0;
-  std::cout << "high num of different keys, all exclusive locks " << std::endl;
-  for (int i = 0; i < m; i++) {
-    transactions->push_back(GenerateTransaction(n, w, hot_set, cold_set));
-  }
-  Benchmark(transactions);
-  transactions->clear();
-  std::cout << "======" << std::endl;
+  std::cout << "Test thread influence. Low Contention. Fixed 0.05 hot set size" << std::endl;
+  for (int num_threads = 1; num_threads <= 512; num_threads *= 2) {
+    NUM_THREADS = num_threads;
+    std::vector<Key> hot_set;
+    std::vector<Key> cold_set;
 
-  /*
-  k = 100;
-  w = 0.5;
-  std::cout << "high num of different keys, mixed locks 50/50 " << std::endl;
-  for (int i = 0; i < m; i++) {
-    transactions.push_back(GenerateTransaction(n, w, hot_set, cold_set));
-  }
-  Benchmark(transactions);
-  transactions.clear();
-  std::cout << "======" << std::endl;
+    double hs_size = 0.05;
+    for (int i = 0; i < KEYS; i++) {
+      if ((rand() % 100) < hs_size * 100) {
+        hot_set.push_back(i);
+      } else {
+        cold_set.push_back(i);
+      }
+    }
 
-  k = 5;
-  w = 0.0;
-  std::cout << "low num of different keys, all shared locks " << std::endl;
-  for (int i = 0; i < m; i++) {
-    transactions.push_back(GenerateTransaction(n, w, hot_set, cold_set));
+    std::cout << "Threads: Num threads " << NUM_THREADS << ". All write locks " << std::endl;
+    for (int i = 0; i < m; i++) {
+      transactions->push_back(GenerateTransaction(n, w, hot_set, cold_set));
+    }
+    Benchmark(transactions);
+    transactions->clear();
+    std::cout << "======" << std::endl;
   }
-  Benchmark(transactions);
-  transactions.clear();
-  std::cout << "======" << std::endl;
 
-  k = 5;
-  w = 1.0;
-  std::cout << "low num of different keys, all exclusive locks " << std::endl;
-  for (int i = 0; i < m; i++) {
-    transactions.push_back(GenerateTransaction(n, w, hot_set, cold_set));
-  }
-  Benchmark(transactions);
-  transactions.clear();
-  std::cout << "======" << std::endl;
+  std::cout << "Test thread influence. High Contention. Fixed 0.001 hot set size" << std::endl;
+  for (int num_threads = 1; num_threads <= 512; num_threads *= 2) {
+    NUM_THREADS = num_threads;
+    std::vector<Key> hot_set;
+    std::vector<Key> cold_set;
 
-  k = 5;
-  w = 0.5;
-  std::cout << "low num of different keys, mixed locks 50/50" << std::endl;
-  for (int i = 0; i < m; i++) {
-    transactions.push_back(GenerateTransaction(n, w, hot_set, cold_set));
+    double hs_size = 0.001;
+    for (int i = 0; i < KEYS; i++) {
+      if ((rand() % 100) < hs_size * 100) {
+        hot_set.push_back(i);
+      } else {
+        cold_set.push_back(i);
+      }
+    }
+
+    std::cout << "Threads: Num threads " << NUM_THREADS << ". All write locks " << std::endl;
+    for (int i = 0; i < m; i++) {
+      transactions->push_back(GenerateTransaction(n, w, hot_set, cold_set));
+    }
+    Benchmark(transactions);
+    transactions->clear();
+    std::cout << "======" << std::endl;
   }
-  Benchmark(transactions);
-  transactions.clear();
-  std::cout << "======" << std::endl;*/
 }
 
 bool comparator(std::pair<Key, LockMode> a, std::pair<Key, LockMode> b) {
@@ -180,13 +182,13 @@ void Tester::Benchmark(std::vector<Txn*> * transactions) {
   for (int i = 0; i < 3; i++) {
     switch(i) {
       case 0:
-        lm = new GlobalLockManager(100);
+        lm = new GlobalLockManager(KEYS/10);
         break;
       case 1:
-        lm = new KeyLockManager(100);
+        lm = new KeyLockManager(KEYS/10);
         break;
       case 2:
-        lm = new LatchFreeLockManager(100);
+        lm = new LatchFreeLockManager(KEYS/10);
         break;
       default:
         break;
