@@ -64,6 +64,7 @@ TNode<LockRequest> * LockRequestLinkedList::atomic_lock_insert(TNode<LockRequest
   //TNode<LockRequest> * lock = atomicCreateRequest(lr);
   //TNode<LockRequest> * lock = new TNode<LockRequest>(lr);
   //std::cout << "Appending request\n";
+  atomic_synchronize();
   atomic_append(lr);
   atomic_synchronize();
  // std::cout << "Updating next pointers\n";
