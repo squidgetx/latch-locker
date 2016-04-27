@@ -39,7 +39,9 @@ void LockRequestLinkedList::next_pointer_update() {
         if (!cmp_and_swap((uint64_t*)&(this->head), (uint64_t) old_head, (uint64_t)old_head->next))
             break; //another thread is updating, so let it do its thing
         else
+        {
             old_head = this->head;
+        }
     }
     TNode<LockRequest>* prev = this->head;
     if (prev == NULL) 
@@ -72,6 +74,7 @@ TNode<LockRequest> * LockRequestLinkedList::atomic_lock_insert(TNode<LockRequest
 
 TNode<LockRequest> * LockRequestLinkedList::latch_free_next(TNode<LockRequest>* req)
 {
+  atomic_synchronize();
   while (req->next == NULL && req != tail) {
     atomic_synchronize();
   }
