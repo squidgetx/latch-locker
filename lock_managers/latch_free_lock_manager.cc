@@ -56,16 +56,15 @@ TNode<LockRequest>* LatchFreeLockManager::AcquireLock(TNode<LockRequest> *lr, co
 
 void LatchFreeLockManager::Release(TNode<LockRequest> *lr, const Key key) {
   LockRequestLinkedList * list = lock_table.get_list(key);
-
   // First find the txn in the lock request list
-  TNode<LockRequest>* current;
+  TNode<LockRequest> * current;
   // True if txn is the first holder of the lock.
   bool firstLockHolder = true;
   for(current = list->head; current != NULL; current = list->latch_free_next(current)) {
     if (current->data.state_ == OBSOLETE)
       continue;
 
-    if (current == lr) {
+    if (current->data.txn_ == lr->data.txn_) {
       break;
     }
 

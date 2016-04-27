@@ -147,7 +147,6 @@ Txn *Tester::GenerateTransaction(int n, double w, std::vector<Key> hot_set, std:
 
 void *threaded_transactions_executor(void *args) {
   // Record start time.
-  double start = GetTime();
 
   struct txn_handler *tha = (struct txn_handler *)args;
 
@@ -156,6 +155,9 @@ void *threaded_transactions_executor(void *args) {
   int executed = 0;
   int id = 0;
   TNode<LockRequest>* lock_requests = reinterpret_cast<TNode<LockRequest>*> (new char[sizeof(TNode<LockRequest>)*REQUESTS_PER_TRANSACTION*TRANSACTIONS_PER_TEST]);
+  
+  double start = GetTime();
+
   while (tha->txn_queue_->size()) {
     Txn *t = tha->txn_queue_->front();
     tha->txn_queue_->pop();    
