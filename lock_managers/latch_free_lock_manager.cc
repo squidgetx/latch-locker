@@ -17,7 +17,10 @@ TNode<LockRequest>* LatchFreeLockManager::TryWriteLock(TNode<LockRequest> *lr, c
 }
 TNode<LockRequest>* LatchFreeLockManager::WriteLock(TNode<LockRequest> *lr, const Key key) {
   TryWriteLock(lr, key);
-  while (lr->data.state_ != ACTIVE) do_pause();
+  while (lr->data.state_ != ACTIVE){
+    do_pause();
+    barrier();
+}
   return lr;
 }
 TNode<LockRequest>* LatchFreeLockManager::TryReadLock(TNode<LockRequest> *lr, const Key key) {
@@ -25,7 +28,10 @@ TNode<LockRequest>* LatchFreeLockManager::TryReadLock(TNode<LockRequest> *lr, co
 }
 TNode<LockRequest>* LatchFreeLockManager::ReadLock(TNode<LockRequest> *lr, const Key key) {
   TryReadLock(lr, key);
-  while (lr->data.state_ != ACTIVE) do_pause();
+  while (lr->data.state_ != ACTIVE) {
+    do_pause();
+    barrier();
+}
   return lr;
 }
 

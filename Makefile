@@ -1,5 +1,5 @@
 CXX=g++
-OFLAG=-O0
+OFLAG=-O3
 CXXFLAGS=-pthread -g --std=c++0x -I$(CURDIR) $(OFLAG)
 
 DIRS=util lock_managers hashtable tester txn
