@@ -121,7 +121,7 @@ Txn *Tester::GenerateTransaction(int n, double w, std::vector<Key> hot_set, std:
   std::vector<std::pair<Key, LockMode>> lock_requests;
 
   for (int i = 0; i < n; i++) {
-    Key key = (i < NUM_HOT_REQUESTS) ? hot_set[(rand() % (int)hot_set.size())] :    // random key from hot set
+    Key key = (i < NUM_HOT_REQUESTS) ? hot_set[(rand() % (int) hot_set.size())] :    // random key from hot set
                           cold_set[(rand() % (int)cold_set.size())];    // random key from cold set
 
     // ensure unique keys
@@ -181,13 +181,13 @@ void Tester::Benchmark(std::vector<Txn*> * transactions) {
   for (int i = 0; i < 3; i++) {
     switch(i) {
       case 0:
-        lm = new GlobalLockManager(100);
+        lm = new GlobalLockManager(KEYS);
         break;
       case 1:
-        lm = new KeyLockManager(100);
+        lm = new KeyLockManager(KEYS);
         break;
       case 2:
-        lm = new LatchFreeLockManager(100);
+        lm = new LatchFreeLockManager(KEYS);
         break;
       default:
         break;
