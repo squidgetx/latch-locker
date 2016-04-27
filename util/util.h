@@ -11,7 +11,8 @@ do_pause()
 
 inline void
 barrier() {
-  asm volatile("":::"memory");
+  //asm volatile("":::"memory");
+  asm volatile("mfence" ::: "memory");
 }
 
 // An indivisible unit of work. 

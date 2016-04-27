@@ -1,4 +1,5 @@
 #include "latch_free_lock_manager.h"
+#include <cassert>
 
 
 bool conflicts(LockRequest o, LockRequest n) {
@@ -49,7 +50,11 @@ TNode<LockRequest>* LatchFreeLockManager::TryAcquireLock(LockRequest n_lock, con
 TNode<LockRequest>* LatchFreeLockManager::AcquireLock(LockRequest n_lock, const Key key) {
   TNode<LockRequest>* newnode = TryAcquireLock(n_lock, key);
   //list->printList();
-  while(newnode->data.state_ != ACTIVE) do_pause();
+  while(newnode->data.state_ != ACTIVE) {
+   // barrier();
+    do_pause();
+    assert(1==0);
+  }
   return newnode;
 }
 

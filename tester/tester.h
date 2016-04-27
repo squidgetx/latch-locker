@@ -24,7 +24,7 @@ private:
   Txn *GenerateTransaction(int n, int k, double w);
 
   pthread_t pthreads[4];
-  int NUM_THREADS = 4;
+  int NUM_THREADS = 3;
   int txn_counter = 0;
 
 

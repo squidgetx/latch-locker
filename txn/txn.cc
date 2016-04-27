@@ -9,7 +9,6 @@ void Txn::Execute(LockManager *lm) {
 
 		Key k = p.first;
 		LockMode mode = p.second;
-   // std::cout << "Requesting key" << k << std::endl;
 		if (mode == SHARED) {
 		  lm->ReadLock(this, k);
 		} else if (mode == EXCLUSIVE) {

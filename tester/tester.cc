@@ -112,12 +112,18 @@ Txn *Tester::GenerateTransaction(int n, int k, double w) {
   std::vector<std::pair<Key, LockMode>> lock_requests;
 
   for (int i = 0; i < n; i++) {
-    Key key = 1 + (rand() % (int)k);
+    // make sure you are getting a unique key
+    Key key = 1 + (rand() % (int) k);
+    for(int j = 0; j < i; j++) {
+      if (lock_requests[j].first == key) {
+        key = 1 + (rand() % (int) k);
+        j = -1; 
+        continue;
+      }
+    }
     LockMode mode = (((double) rand() / (RAND_MAX)) <= w) ? EXCLUSIVE : SHARED;
- //   std::cout << key << " ";
     lock_requests.push_back(std::make_pair(key, mode));
   }
-//kJ  std::cout << std::endl;
   std::sort(lock_requests.begin(), lock_requests.end(), comparator);
 
   Txn *t = new Txn(txn_counter, lock_requests);
