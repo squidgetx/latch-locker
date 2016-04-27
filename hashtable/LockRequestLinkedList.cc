@@ -35,7 +35,7 @@ void LockRequestLinkedList::atomic_synchronize() {
 void LockRequestLinkedList::next_pointer_update() {
     TNode<LockRequest>* old_head = this->head;
     //update head to first non-obsolete lock
-    while (old_head != NULL && old_head->data.state_ == OBSOLETE) {
+    while (old_head != NULL && old_head->data.fstate_.state == OBSOLETE) {
         if (!cmp_and_swap((uint64_t*)&(this->head), (uint64_t) old_head, (uint64_t)old_head->next))
             break; //another thread is updating, so let it do its thing
         else
@@ -45,7 +45,7 @@ void LockRequestLinkedList::next_pointer_update() {
     if (prev == NULL) return;
     TNode<LockRequest>* node = prev->next;
     while (node != NULL) {
-        if (node->data.state_ == OBSOLETE) {
+        if (node->data.fstate_.state == OBSOLETE) {
             if (!cmp_and_swap((uint64_t*)&(prev->next), (uint64_t) node, (uint64_t)node->next))
                 break; //another thread is updating, so let it do its thing
         }
@@ -154,11 +154,11 @@ void LockRequestLinkedList::printList() {
     } else {
       std::cout << " SHARED ";
     }
-    if (lr.state_ == WAIT) {
+    if (lr.fstate_.state == WAIT) {
       std::cout << "WAIT ";
-    } else if (lr.state_ == ACTIVE) {
+    } else if (lr.fstate_.state == ACTIVE) {
       std::cout << "ACTIVE ";
-    } else if (lr.state_ == OBSOLETE) {
+    } else if (lr.fstate_.state == OBSOLETE) {
       std::cout << "OBSOLETE ";
     } 
   //  std::cout << lr.txn_;

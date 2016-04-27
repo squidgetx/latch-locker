@@ -48,7 +48,7 @@ class LockManager {
   //
   // Note: At this point, Releasing a lock that is not held results in
   // *undefined* behavior.
-  virtual void Release(Txn* txn, const Key key) = 0;
+  virtual void Release(TNode<LockRequest>* req, const Key key) = 0;
 
   // Sets '*owners' to contain the txn IDs of all txns holding the lock, and
   // returns the current LockMode of the lock: UNLOCKED if it is not currently
@@ -57,7 +57,7 @@ class LockManager {
 
   // Check the state of txn's lock.
   // @return NOT_FOUND if txn has no lock in the chain.
-  virtual LockState CheckState(const Txn *txn, const Key key) = 0;
+  virtual uint32_t CheckState(const Txn *txn, const Key key) = 0;
 
  protected:
   // List is a placeholder for linked list structure we will define later

@@ -23,6 +23,16 @@ single_work()
 
 
 inline bool
+cmp_and_swap_32(volatile uint32_t *to_write,
+             uint32_t to_cmp,
+             uint32_t new_value) {
+  volatile uint32_t out;
+  asm volatile("lock; cmpxchgl %2, %1"
+               : "=a" (out), "+m"(*to_write)
+               : "q" (new_value), "0"(to_cmp));
+  return out == to_cmp;
+}
+inline bool
 cmp_and_swap(volatile uint64_t *to_write,
              uint64_t to_cmp,
              uint64_t new_value) {
@@ -45,6 +55,20 @@ xchgq(volatile uint64_t *addr, uint64_t new_val)
                "cc");
   return result;
 }
+
+inline uint64_t
+xchgl(volatile uint32_t *addr, uint32_t new_val)
+{
+  uint32_t result;
+
+  // The + in "+m" denotes a read-modify-write operand.
+  asm volatile("lock; xchgl %0, %1" :
+               "+m" (*addr), "=a" (result) :
+               "1" (new_val) :
+               "cc");
+  return result;
+}
+
 
 inline void
 reentrant_lock(volatile uint64_t *word, uint32_t threadId) {

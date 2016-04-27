@@ -17,9 +17,9 @@ class LatchedLockManager : public LockManager {
 
   virtual TNode<LockRequest>* ReadLock(Txn* txn, const Key key);
   virtual TNode<LockRequest>* WriteLock(Txn* txn, const Key key);
-  virtual void Release(Txn* txn, const Key key);
+  virtual void Release(TNode<LockRequest>* req, const Key key);
   //virtual LockMode Status(const Key& key, vector<int>* owners);
-  virtual LockState CheckState(const Txn *txn, const Key key);
+  virtual uint32_t CheckState(const Txn *txn, const Key key);
 
   /**
    * Get a guard for the key at @key.
