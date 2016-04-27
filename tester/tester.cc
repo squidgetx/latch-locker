@@ -154,8 +154,12 @@ void *threaded_transactions_executor(void *args) {
  // std::cout << num_txns << std::endl;
   int executed = 0;
   int id = 0;
-  TNode<LockRequest>* lock_requests = reinterpret_cast<TNode<LockRequest>*> (new char[sizeof(TNode<LockRequest>)*REQUESTS_PER_TRANSACTION*TRANSACTIONS_PER_TEST]);
+  unsigned long membuffer_size = 64+sizeof(TNode<LockRequest>)*REQUESTS_PER_TRANSACTION*TRANSACTIONS_PER_TEST;
+  char* membuffer = new char[membuffer_size];
+  void* void_membuffer = static_cast<void*>(membuffer);
+  TNode<LockRequest>* lock_requests = reinterpret_cast<TNode<LockRequest>*> (std::align(64,membuffer_size-64,void_membuffer,membuffer_size));
   
+
   double start = GetTime();
 
   while (tha->txn_queue_->size()) {
@@ -177,7 +181,7 @@ void *threaded_transactions_executor(void *args) {
   double *throughput = new double;
   *throughput = num_txns / (end-start);
 
-  delete lock_requests;
+  delete[] membuffer;
 
   return (void*) throughput;
 }

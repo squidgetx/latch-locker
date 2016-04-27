@@ -41,6 +41,7 @@ TNode<LockRequest>* LatchFreeLockManager::AcquireLock(TNode<LockRequest> *lr, co
   list->atomic_lock_insert(lr);
   // iterate over all locks in the chain
   TNode<LockRequest>* req = list->head;
+  barrier();
   while (req != NULL && req != lr) {
     if (conflicts(req->data, lr->data)) {
       lr->data.state_ = WAIT;
