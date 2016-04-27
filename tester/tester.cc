@@ -170,12 +170,14 @@ void Tester::Benchmark(std::vector<Txn*> * transactions) {
   for (int i = 0; i < 3; i++) {
     switch(i) {
       case 0:
+        continue;
         lm = new GlobalLockManager(100);
         break;
       case 1:
         lm = new KeyLockManager(100);
         break;
       case 2:
+        continue;
         lm = new LatchFreeLockManager(100);
         break;
       default:
