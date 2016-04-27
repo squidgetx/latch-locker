@@ -140,12 +140,19 @@ void *threaded_transactions_executor(void *args) {
 
   int num_txns = tha->txn_queue_->size();
  // std::cout << num_txns << std::endl;
+  int executed = 0;
 
   while (tha->txn_queue_->size()) {
     Txn *t = tha->txn_queue_->front();
     tha->txn_queue_->pop();    
     t->Execute(tha->lm_);
+    
+    executed++;
+    if (executed % 1000 == 0) {
+      std::cout << executed << "\r";
+    }
   }
+  std::cout << std::endl;
 
   // Record end time
   double end = GetTime();
