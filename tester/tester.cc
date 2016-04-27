@@ -123,10 +123,18 @@ Txn *Tester::GenerateTransaction(int n, double w, std::vector<Key> hot_set, std:
   for (int i = 0; i < n; i++) {
     Key key = (i < NUM_HOT_REQUESTS) ? hot_set[(rand() % (int)hot_set.size())] :    // random key from hot set
                           cold_set[(rand() % (int)cold_set.size())];    // random key from cold set
+
+    // ensure unique keys
+    for(int j = 0; j < i; j++) {
+      if (lock_requests[j].first == key) {
+        key = (i < NUM_HOT_REQUESTS) ? hot_set[(rand() % (int)hot_set.size())] :    // random key from hot set
+                          cold_set[(rand() % (int)cold_set.size())];    // random key from cold set
+        j = -1; 
+      }
+    }
     LockMode mode = (((double) rand() / (RAND_MAX)) <= w) ? EXCLUSIVE : SHARED;
     lock_requests.push_back(std::make_pair(key, mode));
   }
-
   std::sort(lock_requests.begin(), lock_requests.end(), comparator);
 
   Txn *t = new Txn(txn_counter, lock_requests);
@@ -143,12 +151,19 @@ void *threaded_transactions_executor(void *args) {
 
   int num_txns = tha->txn_queue_->size();
  // std::cout << num_txns << std::endl;
+  int executed = 0;
 
   while (tha->txn_queue_->size()) {
     Txn *t = tha->txn_queue_->front();
     tha->txn_queue_->pop();    
     t->Execute(tha->lm_);
+    
+    executed++;
+    if (executed % 1000 == 0) {
+      std::cout << executed << "\r";
+    }
   }
+  std::cout << std::endl;
 
   // Record end time
   double end = GetTime();
