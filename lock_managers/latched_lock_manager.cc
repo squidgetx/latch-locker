@@ -5,42 +5,37 @@
 #include "util/mutex.h"
 #include "txn/txn.h"
 
-TNode<LockRequest>* LatchedLockManager::TryWriteLock(Txn* txn, const Key key) {
-    LockRequest newreq = LockRequest(EXCLUSIVE, txn);
-    TNode<LockRequest>* newnode;
+TNode<LockRequest>* LatchedLockManager::TryWriteLock(TNode<LockRequest> *lr, const Key key) {
     
     Pthread_mutex_guard guard(KeyMutex(key));
 
     // add the lock to the queue
     LockRequestLinkedList *list = lock_table.get_list(key);
 
-    newreq.state_ = WAIT;
+    lr->data.state_ = WAIT;
     // See if we can get this lock immediately or not
     // If the queue is empty then we can get it, otherwise must wait
     if (list->empty()) {
-      newreq.state_ = ACTIVE;
+      lr->data.state_ = ACTIVE;
     }
-
-    newnode = list->insertRequest(newreq);
-    return newnode;
+    list->insertRequest(lr);
+    return lr;
     
 }
-TNode<LockRequest>* LatchedLockManager::WriteLock(Txn* txn, const Key key) {
-  TNode<LockRequest>* newnode = TryWriteLock(txn, key);
+TNode<LockRequest>* LatchedLockManager::WriteLock(TNode<LockRequest> *lr, const Key key) {
+  TNode<LockRequest>* newnode = TryWriteLock(lr, key);
   while (newnode->data.state_ != ACTIVE) do_pause();
   return newnode;
 }
 
-TNode<LockRequest>* LatchedLockManager::TryReadLock(Txn* txn, const Key key) {
-  LockRequest newreq = LockRequest(SHARED, txn);
-  TNode<LockRequest>* newnode;
+TNode<LockRequest>* LatchedLockManager::TryReadLock(TNode<LockRequest> *lr, const Key key) {
   
   Pthread_mutex_guard guard(KeyMutex(key));
   
   // add the lock to the queue
   LockRequestLinkedList *list = lock_table.get_list(key);
 
-  newreq.state_ = ACTIVE;
+  lr->data.state_ = ACTIVE;
   // See if we can get this lock immediately or not
   // If the queue is empty then yea
   if (!list->empty()) {
@@ -49,24 +44,23 @@ TNode<LockRequest>* LatchedLockManager::TryReadLock(Txn* txn, const Key key) {
     for (TNode<LockRequest>* node = list->head; node != NULL; node = node->next) {
       const LockRequest ilr = node->data;
       if (ilr.mode_ != SHARED) {
-        newreq.state_ = WAIT;
+        lr->data.state_ = WAIT;
         break;
       } else {
       }
     }
   }
 
-  newnode = list->insertRequest(newreq);
-  return newnode;
+  return list->insertRequest(lr);;
 }
 
-TNode<LockRequest>* LatchedLockManager::ReadLock(Txn* txn, const Key key) {
-  TNode<LockRequest>* newnode = TryReadLock(txn, key);
+TNode<LockRequest>* LatchedLockManager::ReadLock(TNode<LockRequest> *lr, const Key key) {
+  TNode<LockRequest>* newnode = TryReadLock(lr, key);
   while (newnode->data.state_ != ACTIVE) do_pause();
   return newnode;
 }
 
-void LatchedLockManager::Release(Txn* txn, const Key key) {
+void LatchedLockManager::Release(TNode<LockRequest> *lr, const Key key) {
   Pthread_mutex_guard guard(KeyMutex(key));
 
   LockRequestLinkedList * list = lock_table.get_list(key);
@@ -81,7 +75,7 @@ void LatchedLockManager::Release(Txn* txn, const Key key) {
   // True if txn is the first holder of the lock.
   bool firstLockHolder = true;
   for(current = list->head; current != NULL; current = current->next) {
-    if (current->data.txn_ == txn) {
+    if (current == lr) {
       break;
     }
     firstLockHolder = false;
@@ -130,7 +124,7 @@ void LatchedLockManager::Release(Txn* txn, const Key key) {
 
 }
 
-LockState LatchedLockManager::CheckState(const Txn* txn, const Key key) {
+LockState LatchedLockManager::CheckState(const Txn *txn, const Key key) {
   Pthread_mutex_guard guard(KeyMutex(key));
 
   TNode<LockRequest> *node = lock_table.get_list(key)->head;

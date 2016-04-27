@@ -1,7 +1,9 @@
 #include "txn/txn.h"
 #include "lock_managers/lock_manager.h"
+#include <new>
+#include <cassert>
 
-void Txn::Execute(LockManager *lm) {
+void Txn::Execute(LockManager *lm, int id, TNode<LockRequest>* lock_requests) {
   // acquire phase
   //std::cout << "executing txn " << txn_id << std::endl;
   for (int i = 0; i < keys.size(); i++) {
@@ -9,10 +11,11 @@ void Txn::Execute(LockManager *lm) {
 
     Key k = p.first;
     LockMode mode = p.second;
+    new (&lock_requests[id*REQUESTS_PER_TRANSACTION+i]) TNode<LockRequest>(LockRequest(mode,this));
     if (mode == SHARED) {
-      lm->ReadLock(this, k);
+      lm->ReadLock(&lock_requests[id*REQUESTS_PER_TRANSACTION+i], k);
     } else if (mode == EXCLUSIVE) {
-      lm->WriteLock(this, k);
+      lm->WriteLock(&lock_requests[id*REQUESTS_PER_TRANSACTION+i], k);
     }
   }
 
@@ -21,6 +24,6 @@ void Txn::Execute(LockManager *lm) {
     std::pair<Key, LockMode> p = keys[i];
     Key k = p.first;
    // std::cout << "releasing key " << k << std::endl;
-    lm->Release(this, k);
+    lm->Release(&lock_requests[id*REQUESTS_PER_TRANSACTION+i], k);
   }
 }

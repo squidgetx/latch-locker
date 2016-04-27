@@ -3,8 +3,7 @@
 
 int main(void) {
   // Basic correctness
-  CorrectTester ct;
-  ct.Run();
+	// need to rewrite correctness
 
   // Basic benchmarking
   Tester t;

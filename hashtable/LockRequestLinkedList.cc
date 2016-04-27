@@ -11,13 +11,13 @@ LockRequestLinkedList::LockRequestLinkedList(LockPool * lock_pool, int init_mem)
   //size_to_req = 2*init_mem;
 }
 
-TNode<LockRequest>* LockRequestLinkedList::insertRequest(LockRequest lr)
+TNode<LockRequest>* LockRequestLinkedList::insertRequest(TNode<LockRequest> *lr)
 {
   // Create and append the new lock request. Assumes exclusive/atomic
   // access to the list (caller is responsible for this)
-  TNode<LockRequest> * node_mem = createRequest(lr);
-  append(node_mem);
-  return node_mem;
+  //TNode<LockRequest> * node_mem = createRequest(lr);
+  append(lr);
+  return lr;
 }
 
 void LockRequestLinkedList::deleteRequest(TNode<LockRequest>* lr)
@@ -55,19 +55,19 @@ void LockRequestLinkedList::next_pointer_update() {
     }
 }
 
-TNode<LockRequest> * LockRequestLinkedList::atomic_lock_insert(LockRequest lr)
+TNode<LockRequest> * LockRequestLinkedList::atomic_lock_insert(TNode<LockRequest> *lr)
 {
   // Append the new lock request using the latch free algorithm
   //std::cout << "Creating request\n";
-  TNode<LockRequest> * lock = atomicCreateRequest(lr);
+  //TNode<LockRequest> * lock = atomicCreateRequest(lr);
   //TNode<LockRequest> * lock = new TNode<LockRequest>(lr);
   //std::cout << "Appending request\n";
-  atomic_append(lock);
+  atomic_append(lr);
   atomic_synchronize();
  // std::cout << "Updating next pointers\n";
   next_pointer_update();
   atomic_synchronize();
-  return lock;
+  return lr;
 }
 
 TNode<LockRequest> * LockRequestLinkedList::latch_free_next(TNode<LockRequest>* req)

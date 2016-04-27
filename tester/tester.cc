@@ -12,6 +12,7 @@
 #include "util/common.h"
 #include "lock_request.h"
 
+
 static inline double GetTime() {
   struct timeval tv;
   gettimeofday(&tv, NULL);
@@ -63,7 +64,7 @@ void Tester::Run() {
 
 
   std::cout << "Test thread influence. Low Contention. Fixed 0.05 hot set size" << std::endl;
-  for (int num_threads = 1; num_threads <= 512; num_threads *= 2) {
+  for (int num_threads = 1; num_threads <= 256; num_threads *= 2) {
     NUM_THREADS = num_threads;
     std::vector<Key> hot_set;
     std::vector<Key> cold_set;
@@ -153,11 +154,13 @@ void *threaded_transactions_executor(void *args) {
   int num_txns = tha->txn_queue_->size();
  // std::cout << num_txns << std::endl;
   int executed = 0;
-
+  int id = 0;
+  TNode<LockRequest>* lock_requests = reinterpret_cast<TNode<LockRequest>*> (new char[sizeof(TNode<LockRequest>)*REQUESTS_PER_TRANSACTION*TRANSACTIONS_PER_TEST]);
   while (tha->txn_queue_->size()) {
     Txn *t = tha->txn_queue_->front();
     tha->txn_queue_->pop();    
-    t->Execute(tha->lm_);
+    t->Execute(tha->lm_, id, lock_requests);
+    id++;
  /*   
     executed++;
     if (executed % 1000 == 0) {
@@ -171,6 +174,8 @@ void *threaded_transactions_executor(void *args) {
 
   double *throughput = new double;
   *throughput = num_txns / (end-start);
+
+  delete lock_requests;
 
   return (void*) throughput;
 }
@@ -194,7 +199,7 @@ void Tester::Benchmark(std::vector<Txn*> * transactions) {
         break;
     }
 
-    int throughput = 0;
+    long long int throughput = 0;
 
     for (int j = 0; j < NUM_THREADS; j++) {
 
