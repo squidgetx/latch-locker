@@ -10,9 +10,8 @@ Hashtable::Hashtable(int n) {
   // (nbuckets * bucket size)
   list_array = reinterpret_cast<LockRequestLinkedList*> (new char[sizeof(LockRequestLinkedList)*num_buckets*DEFAULT_BUCKET_SIZE]);
 
-  // Initialize pool of locks
-  lock_pool = new LockPool(num_buckets * DEFAULT_BUCKET_SIZE * DEFAULT_LIST_SIZE * 40960);
-
+  //lock_pool = new LockPool(num_buckets * DEFAULT_BUCKET_SIZE * DEFAULT_LIST_SIZE * 4096);
+  lock_pool = NULL;
 
   // Initialize bucket/lock arrays
   bucket_array = new Bucket[num_buckets];

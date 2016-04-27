@@ -58,17 +58,16 @@ void Tester::Run() {
   transactions->clear();
   std::cout << "======" << std::endl;
 
-  /*
-  k = 100;
   w = 1.0;
   std::cout << "high num of different keys, all exclusive locks " << std::endl;
   for (int i = 0; i < m; i++) {
-    transactions.push_back(GenerateTransaction(n, w, hot_set, cold_set));
+    transactions->push_back(GenerateTransaction(n, w, hot_set, cold_set));
   }
   Benchmark(transactions);
-  transactions.clear();
+  transactions->clear();
   std::cout << "======" << std::endl;
 
+  /*
   k = 100;
   w = 0.5;
   std::cout << "high num of different keys, mixed locks 50/50 " << std::endl;
@@ -178,7 +177,7 @@ void Tester::Benchmark(std::vector<Txn*> * transactions) {
   LockManager *lm;
   // three types of mgr_s
   std::string types[] = { "Global Lock", "Key Lock", "Latch-Free"};
-  for (int i = 0; i < 1; i++) {
+  for (int i = 0; i < 3; i++) {
     switch(i) {
       case 0:
         lm = new GlobalLockManager(100);

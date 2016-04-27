@@ -1,5 +1,6 @@
 CXX=g++
-CXXFLAGS=-pthread -g --std=c++11 -I$(CURDIR) -O3
+OFLAG=-O3
+CXXFLAGS=-pthread -g --std=c++11 -I$(CURDIR) $(OFLAG)
 
 DIRS=util lock_managers hashtable tester txn
 SOURCES :=
@@ -21,6 +22,10 @@ all: $(OBJECTS) $(BINS)
 clean:
 	rm `find . '-name' '*.o'`
 	rm -f $(BINS)
+
+.PHONY: test-dbg
+test-dbg: OFLAG = -O0
+test-dbg: test
 
 .PHONY: test
 test: test_all

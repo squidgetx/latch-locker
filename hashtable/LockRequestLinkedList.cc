@@ -5,10 +5,10 @@
 LockRequestLinkedList::LockRequestLinkedList(LockPool * lock_pool, int init_mem) {
   // Construct the lockrequestlinkedlist with some initial amount of memory
   // with a reference to the global lock pool for backup mem
-  this->lock_pool = lock_pool;
-  memory_list = new TLinkedList<MemoryChunk<TNode<LockRequest> > >();
-  lock_pool->get_uninit_locks(init_mem, memory_list);
-  size_to_req = 2*init_mem;
+  //this->lock_pool = lock_pool;
+  ////memory_list = new TLinkedList<MemoryChunk<TNode<LockRequest> > >();
+  ////lock_pool->get_uninit_locks(init_mem, memory_list);
+  //size_to_req = 2*init_mem;
 }
 
 TNode<LockRequest>* LockRequestLinkedList::insertRequest(LockRequest lr)
@@ -82,6 +82,9 @@ TNode<LockRequest> * LockRequestLinkedList::atomicCreateRequest(LockRequest lr) 
   // Get the TNode<LockRequest> from the memory pool associated with this
   // lock request linked list.
 
+  return new TNode<LockRequest>(lr);
+
+  /*
   // If the local memory pool is empty, get more from the global pool
   int64_t rem_size;
   TNode<MemoryChunk<TNode<LockRequest> > >* memhead;
@@ -110,14 +113,16 @@ TNode<LockRequest> * LockRequestLinkedList::atomicCreateRequest(LockRequest lr) 
   assert(memhead->data.loc != NULL);
   node->data.txn_ = lr.txn_;
   node->data.mode_ = lr.mode_;
-
   return node;
+  */
 }
 
 TNode<LockRequest> * LockRequestLinkedList::createRequest(LockRequest lr) {
   // Get the TNode<LockRequest> from the memory pool associated with this
   // lock request linked list.
+  return new TNode<LockRequest>(lr);
 
+  /*
   // If the local memory pool is empty, get more from the global pool
   if (memory_list->head->data.size == 0) {
    // std::cout << "local pool empty, requesting " << size_to_req << "\n";
@@ -134,14 +139,18 @@ TNode<LockRequest> * LockRequestLinkedList::createRequest(LockRequest lr) {
   node->data = lr;
 
   return node;
+  */
 }
 
 void LockRequestLinkedList::restoreChunk(TNode<LockRequest>* lr) {
   // Restore the chunk of memory associated with the given lock request
   // to the local memory pool
+  return;
+  /*
   MemoryChunk<TNode<LockRequest> > new_chunk(lr,1);
   TNode<MemoryChunk<TNode<LockRequest> > >* new_node = new TNode<MemoryChunk<TNode<LockRequest> > >(new_chunk);
   memory_list->append(new_node);
+  */
 }
 
 void LockRequestLinkedList::printList() {

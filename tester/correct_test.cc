@@ -229,6 +229,26 @@ void CorrectTester::ReleaseCases(LockManager *lm) {
   EXPECT_EQ(lm->CheckState(t3, 3), ACTIVE);
   EXPECT_EQ(lm->CheckState(t4, 3), WAIT);
 
+  // *[EXCLUSIVE]* EXCLUSIVE
+  // *EXCLUSIVE*
+  EXPECT_TRUE(lockGranted(lm->TryWriteLock(t1, 4)));
+  EXPECT_FALSE(lockGranted(lm->TryWriteLock(t2, 4)));
+
+  lm->Release(t1, 4);
+  EXPECT_TRUE(
+      lm->CheckState(t1, 4) == NOT_FOUND || lm->CheckState(t1, 4) == OBSOLETE);
+  EXPECT_EQ(lm->CheckState(t2, 4), ACTIVE);
+
+  // *[SHARED]* EXCLUSIVE
+  // *EXCLUSIVE*
+  EXPECT_TRUE(lockGranted(lm->TryReadLock(t1, 5)));
+  EXPECT_FALSE(lockGranted(lm->TryWriteLock(t2, 5)));
+
+  lm->Release(t1, 5);
+  EXPECT_TRUE(
+      lm->CheckState(t1, 5) == NOT_FOUND || lm->CheckState(t1, 5) == OBSOLETE);
+  EXPECT_EQ(lm->CheckState(t2, 5), ACTIVE);
+
   END;
 }
 
