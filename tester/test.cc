@@ -4,7 +4,7 @@
 int main(void) {
   // Basic correctness
   CorrectTester ct;
-  ct.Run();
+//  ct.Run();
 
   // Basic benchmarking
   Tester t;

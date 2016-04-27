@@ -11,7 +11,7 @@ Hashtable::Hashtable(int n) {
   list_array = reinterpret_cast<LockRequestLinkedList*> (new char[sizeof(LockRequestLinkedList)*num_buckets*DEFAULT_BUCKET_SIZE]);
 
   // Initialize pool of locks
-  lock_pool = new LockPool(num_buckets * DEFAULT_BUCKET_SIZE * DEFAULT_LIST_SIZE * 4096);
+  lock_pool = new LockPool(num_buckets * DEFAULT_BUCKET_SIZE * DEFAULT_LIST_SIZE * 40960);
 
 
   // Initialize bucket/lock arrays
@@ -88,7 +88,7 @@ LockRequestLinkedList * Hashtable::get_list(Key key) {
   }
   catch (int e) {
     if (e == 1) {
-      std::cout << "not found in bucket " << b_index << "\n";
+      std::cerr << key << " not found in bucket " << b_index << "\n";
     }
   }
   return bucket_array[b_index].slots[i];

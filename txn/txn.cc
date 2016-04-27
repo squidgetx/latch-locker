@@ -3,23 +3,24 @@
 
 void Txn::Execute(LockManager *lm) {
   // acquire phase
-  for (int i = 0; i < lr_vector.size(); i++) {
-    std::pair<Key, LockRequest> p = lr_vector[i];
+  //std::cout << "executing txn " << txn_id << std::endl;
+  for (int i = 0; i < keys.size(); i++) {
+    std::pair<Key, LockMode> p = keys[i];
 
     Key k = p.first;
-    LockRequest r = p.second;
-    if (r.mode_ == SHARED) {
-      lm->ReadLock(r.txn_, k);
-    } else if (r.mode_ == EXCLUSIVE) {
-      lm->WriteLock(r.txn_, k);
+    LockMode mode = p.second;
+    if (mode == SHARED) {
+      lm->ReadLock(this, k);
+    } else if (mode == EXCLUSIVE) {
+      lm->WriteLock(this, k);
     }
   }
 
   // release phase
-  for (int i = 0; i < lr_vector.size(); i++) {
-    std::pair<Key, LockRequest> p = lr_vector[i];
+  for (int i = 0; i < keys.size(); i++) {
+    std::pair<Key, LockMode> p = keys[i];
     Key k = p.first;
-    LockRequest r = p.second;
-    lm->Release(r.txn_, k);
+   // std::cout << "releasing key " << k << std::endl;
+    lm->Release(this, k);
   }
 }

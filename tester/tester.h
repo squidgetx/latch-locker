@@ -20,16 +20,20 @@ public:
   void Run();
 private:
   // one LockRequest Sequence
-  void Benchmark(std::vector<Txn*> transactions);
-  Txn *GenerateTransaction(int n, int k, double w);
+  void Benchmark(std::vector<Txn*> * transactions);
+  Txn *GenerateTransaction(int n, double w, std::vector<Key> hot_set, std::vector<Key> cold_set);
 
   pthread_t pthreads[4];
   int NUM_THREADS = 4;
   int txn_counter = 0;
 
 
-  int TRANSACTIONS_PER_TEST = 1000000;
+  int TRANSACTIONS_PER_TEST = 100000;
   int REQUESTS_PER_TRANSACTION = 20;
+  int NUM_HOT_REQUESTS = 1;
+
+  int KEYS = 1000;
+  double HS_SIZE = 0.1;
 };
 
 #endif // TESTER_TESTER_H

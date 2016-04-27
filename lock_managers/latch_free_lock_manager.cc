@@ -1,4 +1,5 @@
 #include "latch_free_lock_manager.h"
+#include <cassert>
 
 
 bool conflicts(LockRequest o, LockRequest n) {
@@ -29,8 +30,6 @@ TNode<LockRequest>* LatchFreeLockManager::ReadLock(Txn* txn, const Key key) {
   while (newnode->data.state_ != ACTIVE) do_pause();
   return newnode;
 }
-
-
 
 TNode<LockRequest>* LatchFreeLockManager::AcquireLock(LockRequest n_lock, const Key key) {
   n_lock.state_ = ACTIVE;

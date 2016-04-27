@@ -42,11 +42,12 @@ void LockRequestLinkedList::next_pointer_update() {
             old_head = this->head;
     }
     TNode<LockRequest>* prev = this->head;
-    if (prev == NULL) return;
+    if (prev == NULL) 
+      return;
     TNode<LockRequest>* node = prev->next;
-    while (node != NULL) {
+    while (node != NULL && node != tail) {
         if (node->data.state_ == OBSOLETE) {
-            if (!cmp_and_swap((uint64_t*)&(prev->next), (uint64_t) node, (uint64_t)node->next))
+            if (!cmp_and_swap((uint64_t*)&(prev->next), (uint64_t) node, (uint64_t) node->next))
                 break; //another thread is updating, so let it do its thing
         }
         prev = node;

@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <iterator>
 #include <random>
+#include <algorithm>
 
 #include "lock_managers/global_lock_manager.h"
 #include "lock_managers/lock_manager.h"
@@ -30,28 +31,39 @@ Tester::Tester() {
 // run different tests
 void Tester::Run() {
   Txn *txn;
-  std::vector<Txn*> transactions;
+  std::vector<Txn*> * transactions = new std::vector<Txn*>();
 
   int m = TRANSACTIONS_PER_TEST; // transactions per benchmarktest
   int n = REQUESTS_PER_TRANSACTION; // number of lock requests per transaction
-  int k; // number of distinct keys
   double w; // percentage of write locks
 
-  k = 100;
+  std::vector<Key> hot_set;
+  std::vector<Key> cold_set;
+
+  srand (time(NULL));
+  for (int i = 0; i < KEYS; i++) {
+    if ((rand() % 100) < HS_SIZE * 100) {
+      hot_set.push_back(i);
+    } else {
+      cold_set.push_back(i);
+    }
+  }
+
   w = 0.0;
   std::cout << "high num of different keys, all shared locks " << std::endl;
   for (int i = 0; i < m; i++) {
-    transactions.push_back(GenerateTransaction(n, k, w));
+    transactions->push_back(GenerateTransaction(n, w, hot_set, cold_set));
   }
   Benchmark(transactions);
-  transactions.clear();
+  transactions->clear();
   std::cout << "======" << std::endl;
 
+  /*
   k = 100;
   w = 1.0;
   std::cout << "high num of different keys, all exclusive locks " << std::endl;
   for (int i = 0; i < m; i++) {
-    transactions.push_back(GenerateTransaction(n, k, w));
+    transactions.push_back(GenerateTransaction(n, w, hot_set, cold_set));
   }
   Benchmark(transactions);
   transactions.clear();
@@ -61,7 +73,7 @@ void Tester::Run() {
   w = 0.5;
   std::cout << "high num of different keys, mixed locks 50/50 " << std::endl;
   for (int i = 0; i < m; i++) {
-    transactions.push_back(GenerateTransaction(n, k, w));
+    transactions.push_back(GenerateTransaction(n, w, hot_set, cold_set));
   }
   Benchmark(transactions);
   transactions.clear();
@@ -71,7 +83,7 @@ void Tester::Run() {
   w = 0.0;
   std::cout << "low num of different keys, all shared locks " << std::endl;
   for (int i = 0; i < m; i++) {
-    transactions.push_back(GenerateTransaction(n, k, w));
+    transactions.push_back(GenerateTransaction(n, w, hot_set, cold_set));
   }
   Benchmark(transactions);
   transactions.clear();
@@ -81,7 +93,7 @@ void Tester::Run() {
   w = 1.0;
   std::cout << "low num of different keys, all exclusive locks " << std::endl;
   for (int i = 0; i < m; i++) {
-    transactions.push_back(GenerateTransaction(n, k, w));
+    transactions.push_back(GenerateTransaction(n, w, hot_set, cold_set));
   }
   Benchmark(transactions);
   transactions.clear();
@@ -91,28 +103,42 @@ void Tester::Run() {
   w = 0.5;
   std::cout << "low num of different keys, mixed locks 50/50" << std::endl;
   for (int i = 0; i < m; i++) {
-    transactions.push_back(GenerateTransaction(n, k, w));
+    transactions.push_back(GenerateTransaction(n, w, hot_set, cold_set));
   }
   Benchmark(transactions);
   transactions.clear();
-  std::cout << "======" << std::endl;
+  std::cout << "======" << std::endl;*/
 }
 
-Txn *Tester::GenerateTransaction(int n, int k, double w) {
-  std::vector<std::pair<Key, LockRequest>> lock_requests;
+bool comparator(std::pair<Key, LockMode> a, std::pair<Key, LockMode> b) {
+  return (a.first > b.first);
+}
+
+Txn *Tester::GenerateTransaction(int n, double w, std::vector<Key> hot_set, std::vector<Key> cold_set) {
+  // generates a single txn that acts on N keys
+  // choosing the keys from a pool of [0,K]
+  // w is proportion of write keys
+  std::vector<std::pair<Key, LockMode>> lock_requests;
 
   for (int i = 0; i < n; i++) {
-    Key key = 1 + (rand() % (int)k);
+    Key key = (i < NUM_HOT_REQUESTS) ? hot_set[(rand() % (int) hot_set.size())] :    // random key from hot set
+                          cold_set[(rand() % (int)cold_set.size())];    // random key from cold set
+
+    // ensure unique keys
+    for(int j = 0; j < i; j++) {
+      if (lock_requests[j].first == key) {
+        key = (i < NUM_HOT_REQUESTS) ? hot_set[(rand() % (int)hot_set.size())] :    // random key from hot set
+                          cold_set[(rand() % (int)cold_set.size())];    // random key from cold set
+        j = -1; 
+      }
+    }
     LockMode mode = (((double) rand() / (RAND_MAX)) <= w) ? EXCLUSIVE : SHARED;
-    LockRequest r = LockRequest(mode, NULL);
-    lock_requests.push_back(std::make_pair(key, r));
+    lock_requests.push_back(std::make_pair(key, mode));
   }
+  std::sort(lock_requests.begin(), lock_requests.end(), comparator);
 
   Txn *t = new Txn(txn_counter, lock_requests);
-
-  for (int i = 0; i < n; i++) {
-    t->lr_vector[i].second.txn_ = t;
-  }
+  txn_counter++;
 
   return t;
 }
@@ -124,12 +150,20 @@ void *threaded_transactions_executor(void *args) {
   struct txn_handler *tha = (struct txn_handler *)args;
 
   int num_txns = tha->txn_queue_->size();
+ // std::cout << num_txns << std::endl;
+  int executed = 0;
 
   while (tha->txn_queue_->size()) {
     Txn *t = tha->txn_queue_->front();
     tha->txn_queue_->pop();    
     t->Execute(tha->lm_);
+ /*   
+    executed++;
+    if (executed % 1000 == 0) {
+      std::cout << executed << "\r";
+    }*/
   }
+  //std::cout << std::endl;
 
   // Record end time
   double end = GetTime();
@@ -140,11 +174,11 @@ void *threaded_transactions_executor(void *args) {
   return (void*) throughput;
 }
 
-void Tester::Benchmark(std::vector<Txn*> transactions) {
+void Tester::Benchmark(std::vector<Txn*> * transactions) {
   LockManager *lm;
   // three types of mgr_s
   std::string types[] = { "Global Lock", "Key Lock", "Latch-Free"};
-  for (int i = 0; i < 3; i++) {
+  for (int i = 0; i < 1; i++) {
     switch(i) {
       case 0:
         lm = new GlobalLockManager(100);
@@ -163,24 +197,24 @@ void Tester::Benchmark(std::vector<Txn*> transactions) {
 
     for (int j = 0; j < NUM_THREADS; j++) {
 
-      std::queue<Txn*> txns;
+      std::queue<Txn*> * txns = new std::queue<Txn*>();
       for (int k = 0; k < TRANSACTIONS_PER_TEST/NUM_THREADS; k++) {
-        txns.push(transactions[TRANSACTIONS_PER_TEST/NUM_THREADS*j + k]);
+        txns->push((*transactions)[TRANSACTIONS_PER_TEST/NUM_THREADS*j + k]);
       }
 
-      struct txn_handler tha(&txns, lm);
-      pthread_create(&pthreads[j], NULL, threaded_transactions_executor, (void*)&tha);
+      struct txn_handler * tha = new struct txn_handler(txns, lm);
+      pthread_create(&pthreads[j], NULL, threaded_transactions_executor, (void*) tha);
     }
 
     for (int j = 0; j < NUM_THREADS; j++) {
       double *tput;
       pthread_join(pthreads[j], (void**)&tput);
       throughput += *tput;
-      std::cout << *tput << std::endl;
+     // std::cout << *tput << std::endl;
       delete tput;
     }
 
-    throughput /= NUM_THREADS;
+   // throughput /= NUM_THREADS;
 
     std::cout << "Lock Manager: " << types[i] << std::endl;
     std::cout << "    Txn throughput / sec: " << throughput << std::endl;

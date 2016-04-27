@@ -10,13 +10,14 @@ class LockManager;
 
 class Txn {
   public:
-    Txn(int txn, std::vector<std::pair<Key, LockRequest>> q) : txn_id(txn), lr_vector(q) {}
+    Txn(int txn, std::vector<std::pair<Key, LockMode>> q) : txn_id(txn), keys(q) {}
+    Txn(int txn) : txn_id(txn) {}
 
     void Execute(LockManager *lm);
 
     Pthread_mutex txn_mutex;
     int txn_id;
-    std::vector<std::pair<Key, LockRequest>> lr_vector;
+    std::vector<std::pair<Key, LockMode>> keys;
 
 
 };
