@@ -9,7 +9,7 @@
 #include "lock_request.h"
 #include "txn/txn.h"
 
-#define DEFAULT_LIST_SIZE 5
+#define DEFAULT_LIST_SIZE 10
 
 class LockRequestLinkedList: private TLinkedList<LockRequest>
 {

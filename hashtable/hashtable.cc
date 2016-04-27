@@ -88,7 +88,7 @@ LockRequestLinkedList * Hashtable::get_list(Key key) {
   }
   catch (int e) {
     if (e == 1) {
-      std::cout << "not found in bucket " << b_index << "\n";
+      std::cerr << key << " not found in bucket " << b_index << "\n";
     }
   }
   return bucket_array[b_index].slots[i];

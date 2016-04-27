@@ -8,7 +8,7 @@
 #include "util/common.h"
 #include "util/mutex.h"
 
-#define DEFAULT_BUCKET_SIZE 5
+#define DEFAULT_BUCKET_SIZE 10
 
 /**
  * A hash bucket for Hashtable.  Stores at most DEFAULT_BUCKET_SIZE hash table

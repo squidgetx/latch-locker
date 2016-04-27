@@ -157,13 +157,13 @@ void *threaded_transactions_executor(void *args) {
     Txn *t = tha->txn_queue_->front();
     tha->txn_queue_->pop();    
     t->Execute(tha->lm_);
-    
+ /*   
     executed++;
     if (executed % 1000 == 0) {
       std::cout << executed << "\r";
-    }
+    }*/
   }
-  std::cout << std::endl;
+  //std::cout << std::endl;
 
   // Record end time
   double end = GetTime();
@@ -178,16 +178,16 @@ void Tester::Benchmark(std::vector<Txn*> * transactions) {
   LockManager *lm;
   // three types of mgr_s
   std::string types[] = { "Global Lock", "Key Lock", "Latch-Free"};
-  for (int i = 0; i < 3; i++) {
+  for (int i = 0; i < 1; i++) {
     switch(i) {
       case 0:
-        lm = new GlobalLockManager(KEYS);
+        lm = new GlobalLockManager(100);
         break;
       case 1:
-        lm = new KeyLockManager(KEYS);
+        lm = new KeyLockManager(100);
         break;
       case 2:
-        lm = new LatchFreeLockManager(KEYS);
+        lm = new LatchFreeLockManager(100);
         break;
       default:
         break;
@@ -210,11 +210,11 @@ void Tester::Benchmark(std::vector<Txn*> * transactions) {
       double *tput;
       pthread_join(pthreads[j], (void**)&tput);
       throughput += *tput;
-      std::cout << *tput << std::endl;
+     // std::cout << *tput << std::endl;
       delete tput;
     }
 
-    throughput /= NUM_THREADS;
+   // throughput /= NUM_THREADS;
 
     std::cout << "Lock Manager: " << types[i] << std::endl;
     std::cout << "    Txn throughput / sec: " << throughput << std::endl;
