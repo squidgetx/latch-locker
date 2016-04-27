@@ -35,14 +35,24 @@ void Tester::Run() {
 
   int m = TRANSACTIONS_PER_TEST; // transactions per benchmarktest
   int n = REQUESTS_PER_TRANSACTION; // number of lock requests per transaction
-  int k; // number of distinct keys
   double w; // percentage of write locks
 
-  k = 99;
+  std::vector<Key> hot_set;
+  std::vector<Key> cold_set;
+
+  srand (time(NULL));
+  for (int i = 0; i < KEYS; i++) {
+    if ((rand() % 100) < HS_SIZE * 100) {
+      hot_set.push_back(i);
+    } else {
+      cold_set.push_back(i);
+    }
+  }
+
   w = 0.0;
   std::cout << "high num of different keys, all shared locks " << std::endl;
   for (int i = 0; i < m; i++) {
-    transactions->push_back(GenerateTransaction(n, k, w));
+    transactions->push_back(GenerateTransaction(n, w, hot_set, cold_set));
   }
   Benchmark(transactions);
   transactions->clear();
@@ -53,7 +63,7 @@ void Tester::Run() {
   w = 1.0;
   std::cout << "high num of different keys, all exclusive locks " << std::endl;
   for (int i = 0; i < m; i++) {
-    transactions.push_back(GenerateTransaction(n, k, w));
+    transactions.push_back(GenerateTransaction(n, w, hot_set, cold_set));
   }
   Benchmark(transactions);
   transactions.clear();
@@ -63,7 +73,7 @@ void Tester::Run() {
   w = 0.5;
   std::cout << "high num of different keys, mixed locks 50/50 " << std::endl;
   for (int i = 0; i < m; i++) {
-    transactions.push_back(GenerateTransaction(n, k, w));
+    transactions.push_back(GenerateTransaction(n, w, hot_set, cold_set));
   }
   Benchmark(transactions);
   transactions.clear();
@@ -73,7 +83,7 @@ void Tester::Run() {
   w = 0.0;
   std::cout << "low num of different keys, all shared locks " << std::endl;
   for (int i = 0; i < m; i++) {
-    transactions.push_back(GenerateTransaction(n, k, w));
+    transactions.push_back(GenerateTransaction(n, w, hot_set, cold_set));
   }
   Benchmark(transactions);
   transactions.clear();
@@ -83,7 +93,7 @@ void Tester::Run() {
   w = 1.0;
   std::cout << "low num of different keys, all exclusive locks " << std::endl;
   for (int i = 0; i < m; i++) {
-    transactions.push_back(GenerateTransaction(n, k, w));
+    transactions.push_back(GenerateTransaction(n, w, hot_set, cold_set));
   }
   Benchmark(transactions);
   transactions.clear();
@@ -93,7 +103,7 @@ void Tester::Run() {
   w = 0.5;
   std::cout << "low num of different keys, mixed locks 50/50" << std::endl;
   for (int i = 0; i < m; i++) {
-    transactions.push_back(GenerateTransaction(n, k, w));
+    transactions.push_back(GenerateTransaction(n, w, hot_set, cold_set));
   }
   Benchmark(transactions);
   transactions.clear();
@@ -104,20 +114,19 @@ bool comparator(std::pair<Key, LockMode> a, std::pair<Key, LockMode> b) {
   return (a.first > b.first);
 }
 
-Txn *Tester::GenerateTransaction(int n, int k, double w) {
+Txn *Tester::GenerateTransaction(int n, double w, std::vector<Key> hot_set, std::vector<Key> cold_set) {
   // generates a single txn that acts on N keys
   // choosing the keys from a pool of [0,K]
   // w is proportion of write keys
-//  std::cout << "Generating Txn: " << txn_counter << " : ";
   std::vector<std::pair<Key, LockMode>> lock_requests;
 
   for (int i = 0; i < n; i++) {
-    Key key = 1 + (rand() % (int)k);
+    Key key = (i < NUM_HOT_REQUESTS) ? hot_set[(rand() % (int)hot_set.size())] :    // random key from hot set
+                          cold_set[(rand() % (int)cold_set.size())];    // random key from cold set
     LockMode mode = (((double) rand() / (RAND_MAX)) <= w) ? EXCLUSIVE : SHARED;
- //   std::cout << key << " ";
     lock_requests.push_back(std::make_pair(key, mode));
   }
-//kJ  std::cout << std::endl;
+
   std::sort(lock_requests.begin(), lock_requests.end(), comparator);
 
   Txn *t = new Txn(txn_counter, lock_requests);
