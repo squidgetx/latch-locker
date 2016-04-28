@@ -71,15 +71,9 @@ void LatchedLockManager::Release(TNode<LockRequest> *lr, const Key key) {
 
 
   // First find the txn in the lock request list
-  TNode<LockRequest> * current;
+  TNode<LockRequest> * current = lr;
   // True if txn is the first holder of the lock.
-  bool firstLockHolder = true;
-  for(current = list->head; current != NULL; current = current->next) {
-    if (current == lr) {
-      break;
-    }
-    firstLockHolder = false;
-  }
+  bool firstLockHolder = (lr == list->head);
 
   if (current == NULL) {
     // abort if the txn doesn't have a lock on this item

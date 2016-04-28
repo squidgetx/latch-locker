@@ -45,6 +45,10 @@ TNode<LockRequest>* LatchFreeLockManager::AcquireLock(TNode<LockRequest> *lr, co
     if (conflicts(req->data, lr->data)) {
       lr->data.state_ = WAIT;
       barrier();
+	  while (req->data.state_ != OBSOLETE)
+	  {
+		  barrier();
+		}
       if (req->data.state_ == OBSOLETE) {
         lr->data.state_ = ACTIVE;
         barrier();
@@ -62,6 +66,8 @@ TNode<LockRequest>* LatchFreeLockManager::AcquireLock(TNode<LockRequest> *lr, co
 
 void LatchFreeLockManager::Release(TNode<LockRequest> *lr, const Key key) {
   LockRequestLinkedList * list = lock_table.get_list(key);
+  lr->data.state_ = OBSOLETE;
+  return;
   // First find the txn in the lock request list
   TNode<LockRequest> * current;
   // True if txn is the first holder of the lock.
