@@ -239,6 +239,7 @@ void Tester::Benchmark(std::vector<Txn*> * transactions) {
      // std::cout << *tput << std::endl;
       delete tput;
     }
+    delete lm;
 
    // throughput /= NUM_THREADS;
 

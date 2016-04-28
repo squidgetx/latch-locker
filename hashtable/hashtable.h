@@ -37,6 +37,7 @@ public:
    */
   Hashtable(int n);
 
+  ~Hashtable();
   /**
    * Insert a lock request @lr into the table for @key.
    */

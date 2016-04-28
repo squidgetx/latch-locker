@@ -3,6 +3,13 @@
 #include "hashtable.h"
 #include "util/common.h"
 
+Hashtable::~Hashtable() {
+    std::cout<<"Deleted?"<<std::endl;
+    delete bucket_array;
+    delete lock_array;
+    delete list_array;
+
+}
 Hashtable::Hashtable(int n) {
   num_buckets = n;
 

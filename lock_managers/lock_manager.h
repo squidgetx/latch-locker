@@ -15,7 +15,6 @@ class Txn;
 class LockManager {
  public:
   LockManager(int nbuckets) : lock_table(nbuckets) {}
-  virtual ~LockManager() {}
 
   virtual TNode<LockRequest>* TryWriteLock(TNode<LockRequest> *lr, const Key key) = 0;
   virtual TNode<LockRequest>* TryReadLock(TNode<LockRequest> *lr, const Key key) = 0;
