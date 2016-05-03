@@ -71,7 +71,7 @@ void Tester::Run() {
   */
 
   std::cout << "Test thread influence. Low Contention. Fixed 0.05 hot set size" << std::endl;
-  for (int num_threads = 1; num_threads <= 256; num_threads *= 2) {
+  for (int num_threads = 2; num_threads <= 256; num_threads *= 2) {
     NUM_THREADS = num_threads;
     std::vector<Key> hot_set;
     std::vector<Key> cold_set;
@@ -164,6 +164,12 @@ Txn *Tester::GenerateTransaction(int n, double w, std::vector<Key> hot_set, std:
   return t;
 }
 
+struct thread_info {
+  double throughput;
+  void* membuffer;
+  thread_info(double tput, void* mb) : throughput(tput), membuffer(mb) {};
+};
+
 void *threaded_transactions_executor(void *args) {
   // Record start time.
 
@@ -194,19 +200,19 @@ void *threaded_transactions_executor(void *args) {
   // Record end time
   double end = GetTime();
 
-  double *throughput = new double;
-  *throughput = num_txns / (end-start);
+  double throughput = num_txns / (end-start);
 
 
-  free(membuffer);
-  return (void*) throughput;
+//  free(membuffer);
+  struct thread_info * i = new struct thread_info(throughput, membuffer);
+  return (void*) i;
 }
 
 void Tester::Benchmark(std::vector<Txn*> * transactions) {
   LockManager *lm;
   // three types of mgr_s
   std::string types[] = { "Global Lock", "Key Lock", "Latch-Free"};
-  for (int i = 0; i < 3; i++) {
+  for (int i = 2; i < 3; i++) {
     switch(i) {
       case 0:
         lm = new GlobalLockManager(KEYS);
@@ -234,13 +240,20 @@ void Tester::Benchmark(std::vector<Txn*> * transactions) {
       pthread_create(&pthreads[j], NULL, threaded_transactions_executor, (void*) tha);
     }
 
+    struct thread_info * infos[NUM_THREADS];
+
     for (int j = 0; j < NUM_THREADS; j++) {
-      double *tput;
-      pthread_join(pthreads[j], (void**)&tput);
-      throughput += *tput;
+      struct thread_info * t;
+      pthread_join(pthreads[j], (void**)&t);
+      infos[j] = t;
+      throughput += t->throughput;
      // std::cout << *tput << std::endl;
-      delete tput;
     }
+    for(int j = 0; j < NUM_THREADS; j++) {
+      free(infos[j]->membuffer);
+    }
+
+
     delete lm;
 
    // throughput /= NUM_THREADS;
