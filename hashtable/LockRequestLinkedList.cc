@@ -2,7 +2,7 @@
 #include "LockRequestLinkedList.h"
 #include <cassert>
 
-LockRequestLinkedList::LockRequestLinkedList(LockPool * lock_pool, int init_mem) {
+LockRequestLinkedList::LockRequestLinkedList() {
   outstanding_locks = 0;
   // Construct the lockrequestlinkedlist with some initial amount of memory
   // with a reference to the global lock pool for backup mem
@@ -16,7 +16,6 @@ TNode<LockRequest>* LockRequestLinkedList::insertRequest(TNode<LockRequest> *lr)
 {
   // Create and append the new lock request. Assumes exclusive/atomic
   // access to the list (caller is responsible for this)
-  //TNode<LockRequest> * node_mem = createRequest(lr);
   append(lr);
   return lr;
 }
@@ -25,7 +24,6 @@ void LockRequestLinkedList::deleteRequest(TNode<LockRequest>* lr)
 {
   // Remove lock request from the list. Assumes exclusive/atmoic
   // access to the list (caller is responsible for this)
-  restoreChunk(lr);
   remove(lr);
 }
 
@@ -61,16 +59,13 @@ void LockRequestLinkedList::next_pointer_update() {
 TNode<LockRequest> * LockRequestLinkedList::atomic_lock_insert(TNode<LockRequest> *lr)
 {
   // Append the new lock request using the latch free algorithm
-  //std::cout << "Creating request\n";
-  //TNode<LockRequest> * lock = atomicCreateRequest(lr);
-  //TNode<LockRequest> * lock = new TNode<LockRequest>(lr);
-  //std::cout << "Appending request\n";
+
   atomic_synchronize();
   atomic_append(lr);
   atomic_synchronize();
- // std::cout << "Updating next pointers\n";
   next_pointer_update();
   atomic_synchronize();
+
   return lr;
 }
 

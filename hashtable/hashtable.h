@@ -41,7 +41,6 @@ public:
   /**
    * Insert a lock request @lr into the table for @key.
    */
- // void lock_insert(Key key, LockRequest& lr);
 
   /**
    * Get a reference to the lock request list for @key.
@@ -63,12 +62,10 @@ public:
   /**
    * Remove a lock request @lr from @key
    */
- // void lock_delete(Key key, TNode<LockRequest>* lr);
 
   /**
    * Get the mutex protecting a particular key
    */
- // pthread_mutex_t* get_mutex(Key key);
 private:
   inline int hash(Key key);
 
@@ -83,8 +80,6 @@ private:
   // Bucket locks.
   Pthread_mutex* lock_array;
 
-  // Lock Pool
-  LockPool * lock_pool;
 };
 
 #endif
