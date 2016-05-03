@@ -45,11 +45,8 @@ TNode<LockRequest>* LatchFreeLockManager::AcquireLock(TNode<LockRequest> *lr, co
     if (conflicts(req->data, lr->data)) {
       lr->data.state_ = WAIT;
       barrier();
-	  while (req->data.state_ != OBSOLETE)
-	  {
-		  barrier();
-		}
       if (req->data.state_ == OBSOLETE) {
+        fetch_and_increment(&(list->outstanding_locks));
         lr->data.state_ = ACTIVE;
         barrier();
         req = list->latch_free_next(req);
@@ -66,75 +63,31 @@ TNode<LockRequest>* LatchFreeLockManager::AcquireLock(TNode<LockRequest> *lr, co
 
 void LatchFreeLockManager::Release(TNode<LockRequest> *lr, const Key key) {
   LockRequestLinkedList * list = lock_table.get_list(key);
-  lr->data.state_ = OBSOLETE;
-  return;
   // First find the txn in the lock request list
-  TNode<LockRequest> * current;
-  // True if txn is the first holder of the lock.
-  bool firstLockHolder = true;
-  for(current = list->head; current != NULL; current = list->latch_free_next(current)) {
-    if (current->data.state_ == OBSOLETE)
-      continue;
-
-    if (current->data.txn_ == lr->data.txn_) {
-      break;
-    }
-
-    firstLockHolder = false;
-  }
-
-  if (current == NULL) {
-    // abort if the txn doesn't have a lock on this item
-    return;
-  }
-
-  int mode = current->data.mode_;
-  //assert(current->data.state_ == ACTIVE);
-  TNode<LockRequest> * next = list->latch_free_next(current);
-  while (next != NULL && next->data.state_ == OBSOLETE) {
-    next = list->latch_free_next(next);
-  }
-
-  current->data.state_ = OBSOLETE;
+  lr->data.state_ = OBSOLETE;
   barrier();
+  uint64_t num_locks = fetch_and_decrement(&(list->outstanding_locks));
+  if (num_locks > 0) return; //other shared locks still outstanding
+  TNode<LockRequest>* next = list->latch_free_next(lr);
 
   if (next == NULL) {
     // nothing left to do if no other txns waiting on this lock
     return;
   }
-
-  if (mode == SHARED) {
-    // don't do anything if you aren't the last shared lock holder
-    if (next->data.mode_ == SHARED) {
-      return;
-    }
+  if (next->data.mode_ == EXCLUSIVE) {
+    fetch_and_increment(&(list->outstanding_locks));
+    next->data.state_ = ACTIVE;
+    barrier();
+    return;
   }
-
-  // At this point, the released lock was either
-  // a) an EXCLUSIVE lock or
-  // b) a SHARED lock, AND the next txn is an EXCLUSIVE lock
-
-  if (next->data.mode_ == SHARED) {
-    // Grant the lock to all the locks in this segment waiting for
-    // a SHARED lock
-    for (; next != NULL; next = list->latch_free_next(next)) {
-      if (next->data.state_ == OBSOLETE)
-        continue;
-
-      if (next->data.mode_ != SHARED) {
-        break;
-      }
-
+  else {
+    for (; next != NULL && next->data.mode_ == SHARED; next = list->latch_free_next(next)) {
+      fetch_and_increment(&(list->outstanding_locks));
       next->data.state_ = ACTIVE;
       barrier();
     }
-
-  } else if (firstLockHolder) {
-    // Just grant to the lock to this request (exclusive lock)
-    next->data.state_ = ACTIVE;
-    barrier();
   }
-
+  return;
 }
 
 LockState LatchFreeLockManager::CheckState(const Txn *txn, const Key key) {

@@ -1,8 +1,9 @@
-#include <cstdint> 
+#include <cstdint>
 #include "LockRequestLinkedList.h"
 #include <cassert>
 
 LockRequestLinkedList::LockRequestLinkedList(LockPool * lock_pool, int init_mem) {
+  outstanding_locks = 0;
   // Construct the lockrequestlinkedlist with some initial amount of memory
   // with a reference to the global lock pool for backup mem
   //this->lock_pool = lock_pool;
@@ -44,7 +45,7 @@ void LockRequestLinkedList::next_pointer_update() {
         }
     }
     TNode<LockRequest>* prev = this->head;
-    if (prev == NULL) 
+    if (prev == NULL)
       return;
     TNode<LockRequest>* node = prev->next;
     while (node != NULL && node != tail) {
@@ -97,10 +98,10 @@ TNode<LockRequest> * LockRequestLinkedList::atomicCreateRequest(LockRequest lr) 
       while (memhead->data.size <= 0)
       {
         assert(memhead->data.loc != NULL);
-          if (memhead->next != NULL) cmp_and_swap((uint64_t*)&(memory_list->head), (uint64_t) memhead, (uint64_t) memhead->next); 
+          if (memhead->next != NULL) cmp_and_swap((uint64_t*)&(memory_list->head), (uint64_t) memhead, (uint64_t) memhead->next);
           else {
               if (cmp_and_swap((uint64_t*)&allocating, 0, 1)) {
-                  lock_pool->get_uninit_locks(size_to_req, memory_list); 
+                  lock_pool->get_uninit_locks(size_to_req, memory_list);
                   size_to_req *= 2;
               }
           }
@@ -174,7 +175,7 @@ void LockRequestLinkedList::printList() {
       std::cout << "ACTIVE ";
     } else if (lr.state_ == OBSOLETE) {
       std::cout << "OBSOLETE ";
-    } 
+    }
   //  std::cout << lr.txn_;
     std::cout << std::endl;
   }

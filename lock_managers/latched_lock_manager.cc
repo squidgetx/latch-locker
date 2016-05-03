@@ -6,7 +6,7 @@
 #include "txn/txn.h"
 
 TNode<LockRequest>* LatchedLockManager::TryWriteLock(TNode<LockRequest> *lr, const Key key) {
-    
+
     Pthread_mutex_guard guard(KeyMutex(key));
 
     // add the lock to the queue
@@ -17,10 +17,11 @@ TNode<LockRequest>* LatchedLockManager::TryWriteLock(TNode<LockRequest> *lr, con
     // If the queue is empty then we can get it, otherwise must wait
     if (list->empty()) {
       lr->data.state_ = ACTIVE;
+      ++(list->outstanding_locks);
     }
     list->insertRequest(lr);
     return lr;
-    
+
 }
 TNode<LockRequest>* LatchedLockManager::WriteLock(TNode<LockRequest> *lr, const Key key) {
   TNode<LockRequest>* newnode = TryWriteLock(lr, key);
@@ -29,9 +30,9 @@ TNode<LockRequest>* LatchedLockManager::WriteLock(TNode<LockRequest> *lr, const 
 }
 
 TNode<LockRequest>* LatchedLockManager::TryReadLock(TNode<LockRequest> *lr, const Key key) {
-  
+
   Pthread_mutex_guard guard(KeyMutex(key));
-  
+
   // add the lock to the queue
   LockRequestLinkedList *list = lock_table.get_list(key);
 
@@ -50,6 +51,7 @@ TNode<LockRequest>* LatchedLockManager::TryReadLock(TNode<LockRequest> *lr, cons
       }
     }
   }
+  if (lr->data.state_ == ACTIVE) ++(list->outstanding_locks);
 
   return list->insertRequest(lr);;
 }
@@ -64,58 +66,25 @@ void LatchedLockManager::Release(TNode<LockRequest> *lr, const Key key) {
   Pthread_mutex_guard guard(KeyMutex(key));
 
   LockRequestLinkedList * list = lock_table.get_list(key);
-  if (list == NULL || list->empty()) {
-    // don't bother releasing non existent lock
-    return;
-  }
-
-
-  // First find the txn in the lock request list
-  TNode<LockRequest> * current = lr;
-  // True if txn is the first holder of the lock.
-  bool firstLockHolder = (lr == list->head);
-
-  if (current == NULL) {
-    // abort if the txn doesn't have a lock on this item
-    return;
-  }
-
-  int mode = current->data.mode_;
-  //assert(current->data.state_ == ACTIVE);
-  TNode<LockRequest> * next = current->next;
-  list->deleteRequest(current);
+  list->deleteRequest(lr);
+  if (--(list->outstanding_locks) > 0) return; //other shared locks still outstanding
+  TNode<LockRequest>* next = lr->next;
 
   if (next == NULL) {
     // nothing left to do if no other txns waiting on this lock
     return;
   }
-
-  if (mode == SHARED) {
-    // don't do anything if you aren't the last shared lock holder
-    if (next->data.mode_ == SHARED) {
-      return;
+  if (next->data.mode_ == EXCLUSIVE) {
+    ++(list->outstanding_locks);
+    next->data.state_ = ACTIVE;
+    return;
+  }
+  else {
+    for (; next != NULL && next->data.mode_ == SHARED; next = next->next) {
+      ++(list->outstanding_locks);
+      next->data.state_ = ACTIVE;
     }
   }
-
-  // At this point, the released lock was either
-  // a) an EXCLUSIVE lock or
-  // b) a SHARED lock, AND the next txn is an EXCLUSIVE lock
-
-  if (next->data.mode_ == SHARED) {
-    // Grant the lock to all the locks in this segment waiting for
-    // a SHARED lock
-    for (; next != NULL; next = next->next) {
-      if (next->data.mode_ != SHARED) {
-        break;
-      }
-    next->data.state_ = ACTIVE;
-    }
-
-  } else if (firstLockHolder) {
-    // Just grant to the lock to this request (exclusive lock)
-    next->data.state_ = ACTIVE;
-  }
-
 }
 
 LockState LatchedLockManager::CheckState(const Txn *txn, const Key key) {
