@@ -71,7 +71,7 @@ void Tester::Run() {
   */
 
   std::cout << "Test thread influence. Low Contention. Fixed 0.05 hot set size" << std::endl;
-  for (int num_threads = 2; num_threads <= 256; num_threads *= 2) {
+  for (int num_threads = 1; num_threads <= 256; num_threads *= 2) {
     NUM_THREADS = num_threads;
     std::vector<Key> hot_set;
     std::vector<Key> cold_set;
@@ -212,7 +212,7 @@ void Tester::Benchmark(std::vector<Txn*> * transactions) {
   LockManager *lm;
   // three types of mgr_s
   std::string types[] = { "Global Lock", "Key Lock", "Latch-Free"};
-  for (int i = 2; i < 3; i++) {
+  for (int i = 0; i < 3; i++) {
     switch(i) {
       case 0:
         lm = new GlobalLockManager(KEYS);
