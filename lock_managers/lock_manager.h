@@ -15,10 +15,9 @@ class Txn;
 class LockManager {
  public:
   LockManager(int nbuckets) : lock_table(nbuckets) {}
-  virtual ~LockManager() {}
 
-  virtual TNode<LockRequest>* TryWriteLock(Txn* txn, const Key key) = 0;
-  virtual TNode<LockRequest>* TryReadLock(Txn* txn, const Key key) = 0;
+  virtual TNode<LockRequest>* TryWriteLock(TNode<LockRequest> *lr, const Key key) = 0;
+  virtual TNode<LockRequest>* TryReadLock(TNode<LockRequest> *lr, const Key key) = 0;
 
 
   // Attempts to grant a read lock to the specified transaction, enqueueing
@@ -27,7 +26,7 @@ class LockManager {
   //
   // Requires: Neither ReadLock nor WriteLock has previously been called with
   //           this txn and key.
-  virtual TNode<LockRequest>* ReadLock(Txn* txn, const Key key) = 0;
+  virtual TNode<LockRequest>* ReadLock(TNode<LockRequest> *lr, const Key key) = 0;
 
   // Attempts to grant a write lock to the specified transaction, enqueueing
   // request in lock table. Returns true if lock is immediately granted, else
@@ -35,7 +34,7 @@ class LockManager {
   //
   // Requires: Neither ReadLock nor WriteLock has previously been called with
   //           this txn and key.
-  virtual TNode<LockRequest>* WriteLock(Txn* txn, const Key key) = 0;
+  virtual TNode<LockRequest>* WriteLock(TNode<LockRequest> *lr, const Key key) = 0;
 
   // Releases lock held by 'txn' on 'key', or cancels any pending request for
   // a lock on 'key' by 'txn'. If 'txn' held an EXCLUSIVE lock on 'key' (or was
@@ -48,7 +47,7 @@ class LockManager {
   //
   // Note: At this point, Releasing a lock that is not held results in
   // *undefined* behavior.
-  virtual void Release(Txn* txn, const Key key) = 0;
+  virtual void Release(TNode<LockRequest> *lr, const Key key) = 0;
 
   // Sets '*owners' to contain the txn IDs of all txns holding the lock, and
   // returns the current LockMode of the lock: UNLOCKED if it is not currently

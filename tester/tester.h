@@ -16,8 +16,7 @@
 
 class Tester {
 public:
-  Tester() : txn_counter(0), TRANSACTIONS_PER_TEST(10000),
-            REQUESTS_PER_TRANSACTION(20), NUM_HOT_REQUESTS(1), KEYS(10000) {}
+  Tester() : txn_counter(0), NUM_HOT_REQUESTS(1), KEYS(100000) {}
   void Run();
 private:
   // one LockRequest Sequence
@@ -28,8 +27,7 @@ private:
   int NUM_THREADS;
   int txn_counter;
 
-  int TRANSACTIONS_PER_TEST;
-  int REQUESTS_PER_TRANSACTION;
+
   int NUM_HOT_REQUESTS;
 
   int KEYS;

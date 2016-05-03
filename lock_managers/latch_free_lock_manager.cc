@@ -12,40 +12,49 @@ bool conflicts(LockRequest o, LockRequest n) {
   return false;
 }
 
-TNode<LockRequest>* LatchFreeLockManager::TryWriteLock(Txn* txn, const Key key) {
-  LockRequest n_lock = LockRequest(EXCLUSIVE, txn);
-  return AcquireLock(n_lock, key);
+TNode<LockRequest>* LatchFreeLockManager::TryWriteLock(TNode<LockRequest> *lr, const Key key) {
+  return AcquireLock(lr, key);
 }
-TNode<LockRequest>* LatchFreeLockManager::WriteLock(Txn* txn, const Key key) {
-  TNode<LockRequest>* newnode = TryWriteLock(txn, key);
-  while (newnode->data.state_ != ACTIVE) do_pause();
-  return newnode;
+TNode<LockRequest>* LatchFreeLockManager::WriteLock(TNode<LockRequest> *lr, const Key key) {
+  TryWriteLock(lr, key);
+  while (lr->data.state_ != ACTIVE){
+    do_pause();
+    barrier();
 }
-TNode<LockRequest>* LatchFreeLockManager::TryReadLock(Txn* txn, const Key key) {
-  LockRequest n_lock = LockRequest(SHARED, txn);
-  return AcquireLock(n_lock, key);
+  return lr;
 }
-TNode<LockRequest>* LatchFreeLockManager::ReadLock(Txn* txn, const Key key) {
-  TNode<LockRequest>* newnode = TryReadLock(txn, key);
-  while (newnode->data.state_ != ACTIVE) do_pause();
-  return newnode;
+TNode<LockRequest>* LatchFreeLockManager::TryReadLock(TNode<LockRequest> *lr, const Key key) {
+  return AcquireLock(lr, key);
+}
+TNode<LockRequest>* LatchFreeLockManager::ReadLock(TNode<LockRequest> *lr, const Key key) {
+  TryReadLock(lr, key);
+  while (lr->data.state_ != ACTIVE) {
+    do_pause();
+    barrier();
+}
+  return lr;
 }
 
-TNode<LockRequest>* LatchFreeLockManager::AcquireLock(LockRequest n_lock, const Key key) {
-  n_lock.state_ = ACTIVE;
+TNode<LockRequest>* LatchFreeLockManager::AcquireLock(TNode<LockRequest> *lr, const Key key) {
+  lr->data.state_ = WAIT;
   LockRequestLinkedList * list = lock_table.get_list(key);
-  TNode<LockRequest>* in = list->atomic_lock_insert(n_lock);
+  list->atomic_lock_insert(lr);
   // iterate over all locks in the chain
   TNode<LockRequest>* req = list->head;
-  while (req != NULL && req != in) {
-    if (conflicts(req->data, n_lock)) {
-      in->data.state_ = WAIT;
+  bool need_to_wait = false;
+  while (req != NULL && req != lr) {
+    if (conflicts(req->data, lr->data)) {
+      need_to_wait = true;
       barrier();
       if (req->data.state_ == OBSOLETE) {
-        in->data.state_ = ACTIVE;
-        barrier();
-        req = list->latch_free_next(req);
-        continue;
+        if (lr->data.state_ == WAIT) {
+          need_to_wait = false;
+          req = list->latch_free_next(req);
+          continue;
+        }
+        else {
+          break;
+        }
       }
       // deadlock check goes here but we skip this
       // break if we found a conflicting lock
@@ -53,78 +62,37 @@ TNode<LockRequest>* LatchFreeLockManager::AcquireLock(LockRequest n_lock, const 
     }
     req = list->latch_free_next(req);
   }
-  return in;
+  if (!need_to_wait) {
+    lr->data.state_ = ACTIVE;
+    barrier();
+    fetch_and_increment(&(list->outstanding_locks));
+  }
+  return lr;
 }
 
-void LatchFreeLockManager::Release(Txn* txn, const Key key) {
+void LatchFreeLockManager::Release(TNode<LockRequest> *lr, const Key key) {
   LockRequestLinkedList * list = lock_table.get_list(key);
-
-  // First find the txn in the lock request list
-  TNode<LockRequest> * current;
-  // True if txn is the first holder of the lock.
-  bool firstLockHolder = true;
-  for(current = list->head; current != NULL; current = list->latch_free_next(current)) {
-    if (current->data.state_ == OBSOLETE)
-      continue;
-
-    if (current->data.txn_ == txn) {
-      break;
-    }
-
-    firstLockHolder = false;
-  }
-
-  if (current == NULL) {
-    // abort if the txn doesn't have a lock on this item
-    return;
-  }
-
-  int mode = current->data.mode_;
-  //assert(current->data.state_ == ACTIVE);
-  TNode<LockRequest> * next = list->latch_free_next(current);
-  while (next != NULL && next->data.state_ == OBSOLETE) {
-    next = list->latch_free_next(next);
-  }
-
-  current->data.state_ = OBSOLETE;
-  barrier();
-
-  if (next == NULL) {
-    // nothing left to do if no other txns waiting on this lock
-    return;
-  }
-
-  if (mode == SHARED) {
-    // don't do anything if you aren't the last shared lock holder
-    if (next->data.mode_ == SHARED) {
-      return;
-    }
-  }
-
-  // At this point, the released lock was either
-  // a) an EXCLUSIVE lock or
-  // b) a SHARED lock, AND the next txn is an EXCLUSIVE lock
-
-  if (next->data.mode_ == SHARED) {
-    // Grant the lock to all the locks in this segment waiting for
-    // a SHARED lock
-    for (; next != NULL; next = list->latch_free_next(next)) {
-      if (next->data.state_ == OBSOLETE)
-        continue;
-
-      if (next->data.mode_ != SHARED) {
-        break;
+  uint64_t num_locks = fetch_and_decrement(&(list->outstanding_locks));
+  if (num_locks == 0) {
+    TNode<LockRequest>* next = list->latch_free_next(lr);
+    if (next != NULL) {
+     
+      if (next->data.mode_ == EXCLUSIVE) {
+        fetch_and_increment(&(list->outstanding_locks));
+        next->data.state_ = ACTIVE;
+        barrier();
       }
-
-      next->data.state_ = ACTIVE;
-      barrier();
+      else {
+        for (; next != NULL && next->data.mode_ == SHARED; next = list->latch_free_next(next)) {
+          fetch_and_increment(&(list->outstanding_locks));
+          next->data.state_ = ACTIVE;
+          barrier();
+        }
+      }
     }
-
-  } else if (firstLockHolder) {
-    // Just grant to the lock to this request (exclusive lock)
-    next->data.state_ = ACTIVE;
-    barrier();
   }
+  lr->data.state_ = OBSOLETE; 
+  barrier();
 
 }
 

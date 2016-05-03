@@ -1,8 +1,9 @@
-#include <cstdint> 
+#include <cstdint>
 #include "LockRequestLinkedList.h"
 #include <cassert>
 
-LockRequestLinkedList::LockRequestLinkedList(LockPool * lock_pool, int init_mem) {
+LockRequestLinkedList::LockRequestLinkedList() {
+  outstanding_locks = 0;
   // Construct the lockrequestlinkedlist with some initial amount of memory
   // with a reference to the global lock pool for backup mem
   //this->lock_pool = lock_pool;
@@ -11,20 +12,18 @@ LockRequestLinkedList::LockRequestLinkedList(LockPool * lock_pool, int init_mem)
   //size_to_req = 2*init_mem;
 }
 
-TNode<LockRequest>* LockRequestLinkedList::insertRequest(LockRequest lr)
+TNode<LockRequest>* LockRequestLinkedList::insertRequest(TNode<LockRequest> *lr)
 {
   // Create and append the new lock request. Assumes exclusive/atomic
   // access to the list (caller is responsible for this)
-  TNode<LockRequest> * node_mem = createRequest(lr);
-  append(node_mem);
-  return node_mem;
+  append(lr);
+  return lr;
 }
 
 void LockRequestLinkedList::deleteRequest(TNode<LockRequest>* lr)
 {
   // Remove lock request from the list. Assumes exclusive/atmoic
   // access to the list (caller is responsible for this)
-  restoreChunk(lr);
   remove(lr);
 }
 
@@ -39,10 +38,12 @@ void LockRequestLinkedList::next_pointer_update() {
         if (!cmp_and_swap((uint64_t*)&(this->head), (uint64_t) old_head, (uint64_t)old_head->next))
             break; //another thread is updating, so let it do its thing
         else
+        {
             old_head = this->head;
+        }
     }
     TNode<LockRequest>* prev = this->head;
-    if (prev == NULL) 
+    if (prev == NULL)
       return;
     TNode<LockRequest>* node = prev->next;
     while (node != NULL && node != tail) {
@@ -55,23 +56,22 @@ void LockRequestLinkedList::next_pointer_update() {
     }
 }
 
-TNode<LockRequest> * LockRequestLinkedList::atomic_lock_insert(LockRequest lr)
+TNode<LockRequest> * LockRequestLinkedList::atomic_lock_insert(TNode<LockRequest> *lr)
 {
   // Append the new lock request using the latch free algorithm
-  //std::cout << "Creating request\n";
-  TNode<LockRequest> * lock = atomicCreateRequest(lr);
-  //TNode<LockRequest> * lock = new TNode<LockRequest>(lr);
-  //std::cout << "Appending request\n";
-  atomic_append(lock);
+
   atomic_synchronize();
- // std::cout << "Updating next pointers\n";
+  atomic_append(lr);
+  atomic_synchronize();
   next_pointer_update();
   atomic_synchronize();
-  return lock;
+
+  return lr;
 }
 
 TNode<LockRequest> * LockRequestLinkedList::latch_free_next(TNode<LockRequest>* req)
 {
+  atomic_synchronize();
   while (req->next == NULL && req != tail) {
     atomic_synchronize();
   }
@@ -93,10 +93,10 @@ TNode<LockRequest> * LockRequestLinkedList::atomicCreateRequest(LockRequest lr) 
       while (memhead->data.size <= 0)
       {
         assert(memhead->data.loc != NULL);
-          if (memhead->next != NULL) cmp_and_swap((uint64_t*)&(memory_list->head), (uint64_t) memhead, (uint64_t) memhead->next); 
+          if (memhead->next != NULL) cmp_and_swap((uint64_t*)&(memory_list->head), (uint64_t) memhead, (uint64_t) memhead->next);
           else {
               if (cmp_and_swap((uint64_t*)&allocating, 0, 1)) {
-                  lock_pool->get_uninit_locks(size_to_req, memory_list); 
+                  lock_pool->get_uninit_locks(size_to_req, memory_list);
                   size_to_req *= 2;
               }
           }
@@ -170,7 +170,7 @@ void LockRequestLinkedList::printList() {
       std::cout << "ACTIVE ";
     } else if (lr.state_ == OBSOLETE) {
       std::cout << "OBSOLETE ";
-    } 
+    }
   //  std::cout << lr.txn_;
     std::cout << std::endl;
   }
