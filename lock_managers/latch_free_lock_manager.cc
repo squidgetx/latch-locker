@@ -46,7 +46,6 @@ TNode<LockRequest>* LatchFreeLockManager::AcquireLock(TNode<LockRequest> *lr, co
       lr->data.state_ = WAIT;
       barrier();
       if (req->data.state_ == OBSOLETE) {
-        fetch_and_increment(&(list->outstanding_locks));
         lr->data.state_ = ACTIVE;
         barrier();
         req = list->latch_free_next(req);
@@ -58,6 +57,8 @@ TNode<LockRequest>* LatchFreeLockManager::AcquireLock(TNode<LockRequest> *lr, co
     }
     req = list->latch_free_next(req);
   }
+  if (lr->data.state_ == ACTIVE)
+        fetch_and_increment(&(list->outstanding_locks));
   return lr;
 }
 
