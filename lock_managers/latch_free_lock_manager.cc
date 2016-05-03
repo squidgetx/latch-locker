@@ -57,35 +57,54 @@ TNode<LockRequest>* LatchFreeLockManager::AcquireLock(TNode<LockRequest> *lr, co
     }
     req = list->latch_free_next(req);
   }
-  if (lr->data.state_ == ACTIVE)
-        fetch_and_increment(&(list->outstanding_locks));
+ // if (lr->data.state_ == ACTIVE)
+   //     fetch_and_increment(&(list->outstanding_locks));
   return lr;
 }
 
 void LatchFreeLockManager::Release(TNode<LockRequest> *lr, const Key key) {
   LockRequestLinkedList * list = lock_table.get_list(key);
   // First find the txn in the lock request list
+  // latch free iterate until finding 
+  // Count the active locks until we find our lock
+  TNode<LockRequest> * current = list->head;
+  int count = 0;
+  while(true) {
+    if (current->data.state_ == OBSOLETE) {
+      current = list->latch_free_next(current);
+      barrier();
+      continue;
+    } else if (current->data.state_ == ACTIVE) {
+      count++;
+    }
+    if (current == lr) {
+      break;
+    }
+    current = list->latch_free_next(current);
+    barrier();
+  }
   lr->data.state_ = OBSOLETE;
   barrier();
-  uint64_t num_locks = fetch_and_decrement(&(list->outstanding_locks));
-  if (num_locks > 0) return; //other shared locks still outstanding
-  TNode<LockRequest>* next = list->latch_free_next(lr);
-
-  if (next == NULL) {
-    // nothing left to do if no other txns waiting on this lock
-    return;
-  }
-  if (next->data.mode_ == EXCLUSIVE) {
-    fetch_and_increment(&(list->outstanding_locks));
-    next->data.state_ = ACTIVE;
+  if (count == 1) {
+    int granted = 0;
+    current = list->latch_free_next(current);
     barrier();
-    return;
-  }
-  else {
-    for (; next != NULL && next->data.mode_ == SHARED; next = list->latch_free_next(next)) {
-      fetch_and_increment(&(list->outstanding_locks));
-      next->data.state_ = ACTIVE;
-      barrier();
+    while(current != NULL) {
+      // grant locks until we can't anymore
+        if (current->data.mode_ == EXCLUSIVE) {
+          // grant it!
+          if (granted == 0) {
+            current->data.state_ = ACTIVE;
+            barrier();
+          }
+          return;
+        } else {
+          current->data.state_ = ACTIVE;
+          barrier();
+          granted++;
+        }
+        current = list->latch_free_next(current);
+        barrier();
     }
   }
   return;
