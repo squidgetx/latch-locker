@@ -50,6 +50,7 @@ void Tester::Run() {
   srand (time(NULL));
 
   // vary contention
+  
   for (double hs_size = 0.05; hs_size > 0.00001; hs_size/=2) {
     std::vector<Key> hot_set;
     std::vector<Key> cold_set;
@@ -71,7 +72,7 @@ void Tester::Run() {
   }
 
   std::cout << "Test thread influence. Low Contention. Fixed 0.05 hot set size" << std::endl;
-  for (int i = 1; i <= THREAD_SIZE_LENGTH; i++ ) {
+  for (int i = 0; i < THREAD_SIZE_LENGTH; i++ ) {
     NUM_THREADS = threadSizes[i];
     std::vector<Key> hot_set;
     std::vector<Key> cold_set;

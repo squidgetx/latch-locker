@@ -9,7 +9,7 @@ class LockManager;
 #include "hashtable/TNode.h"
 #include "lock_request.h"
 
-#define TRANSACTIONS_PER_TEST 100000
+#define TRANSACTIONS_PER_TEST 500000
 #define REQUESTS_PER_TRANSACTION 20
 
 class Txn {
