@@ -123,7 +123,9 @@ bool comparator(std::pair<Key, LockMode> a, std::pair<Key, LockMode> b) {
   return (a.first > b.first);
 }
 
-Txn *Tester::GenerateTransaction(int n, double w, std::vector<Key> hot_set, std::vector<Key> cold_set) {
+Txn *Tester::GenerateTransaction(int n, double w,
+    std::vector<Key> &hot_set,
+    std::vector<Key> &cold_set) {
   // generates a single txn that acts on N keys
   // choosing the keys from a pool of [0,K]
   // w is proportion of write keys
@@ -132,27 +134,27 @@ Txn *Tester::GenerateTransaction(int n, double w, std::vector<Key> hot_set, std:
 
 
   for (int i = 0; i < n; i++) {
-	Key key;
-	do {
-    key = (i < NUM_HOT_REQUESTS) ? hot_set[(rand() % (int) hot_set.size())] :    // random key from hot set
-                          cold_set[(rand() % (int)cold_set.size())];    // random key from cold set
-	}
-	while (keys.count(key));
-	keys.insert(key);
-
-
-    // ensure unique keys
-	/*
-	if (key
-	keys.insert(key)
-    for(int j = 0; j < i; j++) {
-      if (lock_requests[j].first == key) {
-        key = (i < NUM_HOT_REQUESTS) ? hot_set[(rand() % (int)hot_set.size())] :    // random key from hot set
-                          cold_set[(rand() % (int)cold_set.size())];    // random key from cold set
-        j = -1; 
-      }
+    Key key;
+    do {
+      key = (i < NUM_HOT_REQUESTS) ? hot_set[(rand() % (int) hot_set.size())] :    // random key from hot set
+                            cold_set[(rand() % (int)cold_set.size())];    // random key from cold set
     }
-	*/
+    while (keys.count(key));
+    keys.insert(key);
+
+
+      // ensure unique keys
+    /*
+    if (key
+    keys.insert(key)
+      for(int j = 0; j < i; j++) {
+        if (lock_requests[j].first == key) {
+          key = (i < NUM_HOT_REQUESTS) ? hot_set[(rand() % (int)hot_set.size())] :    // random key from hot set
+                            cold_set[(rand() % (int)cold_set.size())];    // random key from cold set
+          j = -1; 
+        }
+      }
+    */
     LockMode mode = (((double) rand() / (RAND_MAX)) <= w) ? EXCLUSIVE : SHARED;
     lock_requests.push_back(std::make_pair(key, mode));
   }

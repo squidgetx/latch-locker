@@ -21,7 +21,7 @@ public:
 private:
   // one LockRequest Sequence
   void Benchmark(std::vector<Txn*> * transactions);
-  Txn *GenerateTransaction(int n, double w, std::vector<Key> hot_set, std::vector<Key> cold_set);
+  Txn *GenerateTransaction(int n, double w, std::vector<Key> &hot_set, std::vector<Key> &cold_set);
 
   pthread_t pthreads[600];
   int NUM_THREADS;
