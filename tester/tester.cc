@@ -17,6 +17,9 @@
 
 #define DEFAULT_SPIN_TIME 10000
 
+static int threadSizes[] = {1,2,4,8,16,24,32,40,48,56,64,80,96,112,128,160,196,228,256};
+#define THREAD_SIZE_LENGTH 19
+
 
 static inline double GetTime() {
   struct timeval tv;
@@ -43,10 +46,9 @@ void Tester::Run() {
 
   NUM_THREADS = 64;
 
-  std::cout << "Test contention. Fixed 4 cores" << std::endl;
+  std::cout << "Test contention. Fixed 64 cores" << std::endl;
   srand (time(NULL));
 
-  /*
   // vary contention
   for (double hs_size = 0.05; hs_size > 0.00001; hs_size/=2) {
     std::vector<Key> hot_set;
@@ -68,11 +70,9 @@ void Tester::Run() {
     std::cout << "======" << std::endl;
   }
 
-  */
-
   std::cout << "Test thread influence. Low Contention. Fixed 0.05 hot set size" << std::endl;
-  for (int num_threads = 1; num_threads <= 256; num_threads *= 2) {
-    NUM_THREADS = num_threads;
+  for (int i = 1; i <= THREAD_SIZE_LENGTH; i++ ) {
+    NUM_THREADS = threadSizes[i];
     std::vector<Key> hot_set;
     std::vector<Key> cold_set;
 
