@@ -193,7 +193,6 @@
  /**
   * Test various edge cases associated with releasing locks.
   */
-/*
  void CorrectTester::ReleaseCases(LockManager *lm) {
    BEGIN;
    Txn *t1 = new Txn(1);
@@ -207,39 +206,51 @@
    // Locks that are granted are in astericks.
    //
    // Each test uses a different key to ensure there is not interference.
+   TNode<LockRequest> * l1 = new TNode<LockRequest>(LockRequest(SHARED,t1));
+   TNode<LockRequest> * l2 = new TNode<LockRequest>(LockRequest(SHARED,t2));
+   TNode<LockRequest> * l3 = new TNode<LockRequest>(LockRequest(EXCLUSIVE,t3));
 
    // *[SHARED]* *SHARED* EXCLUSIVE
    // *SHARED* EXCLUSIVE
-   EXPECT_TRUE(lockGranted(lm->TryReadLock(t1, 1)));
-   EXPECT_TRUE(lockGranted(lm->TryReadLock(t2, 1)));
-   EXPECT_FALSE(lockGranted(lm->TryWriteLock(t3, 1)));
+   EXPECT_TRUE(lockGranted(lm->TryReadLock(l1, 1)));
+   EXPECT_TRUE(lockGranted(lm->TryReadLock(l2, 1)));
+   EXPECT_FALSE(lockGranted(lm->TryWriteLock(l3, 1)));
 
-   lm->Release(t1, 1);
+   lm->Release(l1, 1);
+
    EXPECT_TRUE(
        lm->CheckState(t1, 1) == NOT_FOUND || lm->CheckState(t1, 1) == OBSOLETE);
    EXPECT_EQ(lm->CheckState(t2, 1), ACTIVE);
    EXPECT_EQ(lm->CheckState(t3, 1), WAIT);
-
+  
    // *SHARED* *[SHARED]* EXCLUSIVE
    // *SHARED* EXCLUSIVE SHARED
-   EXPECT_TRUE(lockGranted(lm->TryReadLock(t1, 2)));
-   EXPECT_TRUE(lockGranted(lm->TryReadLock(t2, 2)));
-   EXPECT_FALSE(lockGranted(lm->TryWriteLock(t3, 2)));
+   l1 = new TNode<LockRequest>(LockRequest(SHARED, t1));
+   l2 = new TNode<LockRequest>(LockRequest(SHARED, t2));
+   l3 = new TNode<LockRequest>(LockRequest(EXCLUSIVE, t3));
+   EXPECT_TRUE(lockGranted(lm->TryReadLock(l1, 2)));
+   EXPECT_TRUE(lockGranted(lm->TryReadLock(l2, 2)));
+   EXPECT_FALSE(lockGranted(lm->TryWriteLock(l3, 2)));
 
-   lm->Release(t2, 2);
+   lm->Release(l2, 2);
    EXPECT_EQ(lm->CheckState(t1, 2), ACTIVE);
    EXPECT_TRUE(
        lm->CheckState(t2, 2) == NOT_FOUND || lm->CheckState(t2, 2) == OBSOLETE);
    EXPECT_EQ(lm->CheckState(t3, 2), WAIT);
 
+   l1 = new TNode<LockRequest>(LockRequest(EXCLUSIVE, t1));
+   l2 = new TNode<LockRequest>(LockRequest(SHARED, t2));
+   l3 = new TNode<LockRequest>(LockRequest(SHARED, t3));
+   TNode<LockRequest> * l4 = new TNode<LockRequest>(LockRequest(EXCLUSIVE, t4));
+
    // *[EXCLUSIVE]* SHARED SHARED EXCLUSIVE
    // *SHARED* *SHARED* EXCLUSIVE
-   EXPECT_TRUE(lockGranted(lm->TryWriteLock(t1, 3)));
-   EXPECT_FALSE(lockGranted(lm->TryReadLock(t2, 3)));
-   EXPECT_FALSE(lockGranted(lm->TryReadLock(t3, 3)));
-   EXPECT_FALSE(lockGranted(lm->TryWriteLock(t4, 3)));
+   EXPECT_TRUE(lockGranted(lm->TryWriteLock(l1, 3)));
+   EXPECT_FALSE(lockGranted(lm->TryReadLock(l2, 3)));
+   EXPECT_FALSE(lockGranted(lm->TryReadLock(l3, 3)));
+   EXPECT_FALSE(lockGranted(lm->TryWriteLock(l4, 3)));
 
-   lm->Release(t1, 3);
+   lm->Release(l1, 3);
    EXPECT_TRUE(
        lm->CheckState(t1, 3) == NOT_FOUND || lm->CheckState(t1, 3) == OBSOLETE);
    EXPECT_EQ(lm->CheckState(t2, 3), ACTIVE);
@@ -248,33 +259,40 @@
 
    // *[EXCLUSIVE]* EXCLUSIVE
    // *EXCLUSIVE*
-   EXPECT_TRUE(lockGranted(lm->TryWriteLock(t1, 4)));
-   EXPECT_FALSE(lockGranted(lm->TryWriteLock(t2, 4)));
 
-   lm->Release(t1, 4);
+   l1 = new TNode<LockRequest>(LockRequest(EXCLUSIVE, t1));
+   l2 = new TNode<LockRequest>(LockRequest(EXCLUSIVE, t2));
+
+   EXPECT_TRUE(lockGranted(lm->TryWriteLock(l1, 4)));
+   EXPECT_FALSE(lockGranted(lm->TryWriteLock(l2, 4)));
+
+   lm->Release(l1, 4);
    EXPECT_TRUE(
        lm->CheckState(t1, 4) == NOT_FOUND || lm->CheckState(t1, 4) == OBSOLETE);
    EXPECT_EQ(lm->CheckState(t2, 4), ACTIVE);
 
    // *[SHARED]* EXCLUSIVE
    // *EXCLUSIVE*
-   EXPECT_TRUE(lockGranted(lm->TryReadLock(t1, 5)));
-   EXPECT_FALSE(lockGranted(lm->TryWriteLock(t2, 5)));
 
-   lm->Release(t1, 5);
+   l1 = new TNode<LockRequest>(LockRequest(SHARED, t1));
+   l2 = new TNode<LockRequest>(LockRequest(EXCLUSIVE, t2));
+
+   EXPECT_TRUE(lockGranted(lm->TryReadLock(l1, 5)));
+   EXPECT_FALSE(lockGranted(lm->TryWriteLock(l2, 5)));
+
+   lm->Release(l1, 5);
    EXPECT_TRUE(
        lm->CheckState(t1, 5) == NOT_FOUND || lm->CheckState(t1, 5) == OBSOLETE);
    EXPECT_EQ(lm->CheckState(t2, 5), ACTIVE);
 
    END;
  }
-*/
 
  void CorrectTester::Run() {
    // Test the global lcok manager
    // three types of mgr_s
    LockManager * lm;
-   for (int i = 0; i < 3; i++) {
+   for (int i = 0; i < 2; i++) {
      switch(i) {
        case 0:
          lm = new GlobalLockManager(100);
@@ -293,6 +311,6 @@
      }
      SimpleLocking(lm);
      //MultithreadedLocking(lm);
-     //ReleaseCases(lm);
+     ReleaseCases(lm);
    }
  }
