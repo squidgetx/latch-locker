@@ -19,6 +19,10 @@ void Txn::Execute(LockManager *lm, int id, TNode<LockRequest>* lock_requests) {
     }
   }
 
+  for (int i = 0; i < spintime; i++) {
+    single_work();
+  }
+
   // release phase
   for (int i = 0; i < keys.size(); i++) {
     std::pair<Key, LockMode> p = keys[i];

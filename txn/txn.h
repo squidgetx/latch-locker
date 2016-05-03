@@ -14,15 +14,16 @@ class LockManager;
 
 class Txn {
   public:
-    Txn(int txn, std::vector<std::pair<Key, LockMode>> q) : txn_id(txn), keys(q) {}
+    Txn(int txn, std::vector<std::pair<Key, LockMode>> q, int spin) : txn_id(txn), keys(q), spintime(spin) {}
+    Txn(int txn, std::vector<std::pair<Key, LockMode>> q) : txn_id(txn), keys(q), spintime(0) {}
     Txn(int txn) : txn_id(txn) {}
 
     void Execute(LockManager *lm, int id, TNode<LockRequest>* lock_requests);
 
     Pthread_mutex txn_mutex;
     int txn_id;
+    int spintime;
     std::vector<std::pair<Key, LockMode>> keys;
-
 
 };
 

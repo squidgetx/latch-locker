@@ -15,6 +15,8 @@
 #include "util/common.h"
 #include "lock_request.h"
 
+#define DEFAULT_SPIN_TIME 10000
+
 
 static inline double GetTime() {
   struct timeval tv;
@@ -156,7 +158,7 @@ Txn *Tester::GenerateTransaction(int n, double w, std::vector<Key> hot_set, std:
   }
   std::sort(lock_requests.begin(), lock_requests.end(), comparator);
 
-  Txn *t = new Txn(txn_counter, lock_requests);
+  Txn *t = new Txn(txn_counter, lock_requests, DEFAULT_SPIN_TIME);
   txn_counter++;
 
   return t;
