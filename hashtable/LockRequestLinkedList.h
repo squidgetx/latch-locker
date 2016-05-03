@@ -14,7 +14,7 @@
 class LockRequestLinkedList: private TLinkedList<LockRequest>
 {
 public:
-  LockRequestLinkedList(LockPool* lock_pool, int init_mem);
+  LockRequestLinkedList() {}
   TNode<LockRequest>* insertRequest(TNode<LockRequest> *lr);
   void deleteRequest(TNode<LockRequest>* lr);
   TNode<LockRequest>* atomic_lock_insert(TNode<LockRequest> *lr);
@@ -25,14 +25,6 @@ public:
   using TLinkedList<LockRequest>::head;
   using TLinkedList<LockRequest>::tail;
   using TLinkedList<LockRequest>::empty;
-private:
-  TNode<LockRequest> * createRequest(LockRequest lr);
-  TNode<LockRequest> * atomicCreateRequest(LockRequest lr);
-  void restoreChunk(TNode<LockRequest>* lr);
-  int size_to_req;
-  TLinkedList<MemoryChunk<TNode<LockRequest> > >* memory_list;
-  LockPool * lock_pool;
-  //uint64_t allocating = 0;
 };
 
 #endif
