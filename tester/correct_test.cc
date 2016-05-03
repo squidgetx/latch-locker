@@ -163,28 +163,33 @@
    END;
  }
 
- void CorrectTester::Run() {
-   // Test the global lcok manager
-   // three types of mgr_s
+static LockManager *newLockManager(int i) {
    LockManager * lm;
-   for (int i = 0; i < 3; i++) {
-     switch(i) {
-       case 0:
-         lm = new GlobalLockManager(100);
-         std::cout << "** Global Manager **" << std::endl;
-         break;
-       case 1:
-         lm = new KeyLockManager(100);
-         std::cout << "** Key Lock Manager **" << std::endl;
-         break;
-       case 2:
-         lm = new LatchFreeLockManager(100);
-         std::cout<< "** Latch Free Lock Manager **" << std::endl;
-         break;
-       default:
-         break;
-     }
-     SimpleLocking(lm);
-     ReleaseCases(lm);
+   switch(i) {
+    case 0:
+       lm = new GlobalLockManager(100);
+       std::cout << "** Global Manager **" << std::endl;
+       break;
+     case 1:
+       lm = new KeyLockManager(100);
+       std::cout << "** Key Lock Manager **" << std::endl;
+       break;
+     case 2:
+       lm = new LatchFreeLockManager(100);
+       std::cout<< "** Latch Free Lock Manager **" << std::endl;
+       break;
+     default:
+       break;
    }
+  return lm;
+}
+
+
+void CorrectTester::Run() {
+ // Test the global lcok manager
+ // three types of mgr_s
+ for (int i = 0; i < 3; i++) {
+   SimpleLocking(newLockManager(i));
+   ReleaseCases(newLockManager(i));
  }
+}
