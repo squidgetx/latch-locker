@@ -9,6 +9,11 @@ extern inline void barrier();
 extern inline bool cmp_and_swap(volatile uint64_t *to_write, uint64_t to_cmp,
                          uint64_t new_value);
 
+extern inline bool
+cmp_and_swap32(volatile uint32_t *to_write,
+             uint32_t to_cmp,
+             uint32_t new_value);
+
 extern inline uint64_t xchgq(volatile uint64_t *addr, uint64_t new_val);
 
 extern inline void reentrant_lock(volatile uint64_t *word, uint32_t threadId);
@@ -23,7 +28,13 @@ extern inline uint32_t fetch_and_increment_32(volatile uint32_t *variable);
 
 extern inline uint64_t fetch_and_increment(volatile uint64_t *variable);
 
+extern inline int64_t
+fetch_and_increment_signed(volatile int64_t *variable);
+
 extern inline long fetch_and_decrement(volatile uint64_t *variable);
+
+extern inline int64_t
+fetch_and_decrement_signed(volatile int64_t *variable);
 
 extern inline void single_work();
 

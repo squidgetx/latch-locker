@@ -1,6 +1,6 @@
 #include "latch_free_lock_manager.h"
 #include <cassert>
-
+#include <cstdio>
 
 bool conflicts(LockRequest o, LockRequest n) {
   if (o.mode_ == EXCLUSIVE) {
@@ -63,37 +63,45 @@ TNode<LockRequest>* LatchFreeLockManager::AcquireLock(TNode<LockRequest> *lr, co
     req = list->latch_free_next(req);
   }
   if (!need_to_wait) {
-    lr->data.state_ = ACTIVE;
-    barrier();
-    fetch_and_increment(&(list->outstanding_locks));
+    bool made_active = cmp_and_swap32(
+        (uint32_t *)(&(lr->data.state_)),
+        (uint32_t)WAIT,
+        (uint32_t)ACTIVE);
+    if (made_active)
+      fetch_and_increment_signed(&(list->outstanding_locks));
   }
   return lr;
 }
 
 void LatchFreeLockManager::Release(TNode<LockRequest> *lr, const Key key) {
   LockRequestLinkedList * list = lock_table.get_list(key);
-  uint64_t num_locks = fetch_and_decrement(&(list->outstanding_locks));
-  if (num_locks == 0) {
+  lr->data.state_ = OBSOLETE;
+  barrier();
+  int64_t num_locks = fetch_and_decrement_signed(&(list->outstanding_locks));
+  if (num_locks <= 0) {
     TNode<LockRequest>* next = list->latch_free_next(lr);
     if (next != NULL) {
-     
       if (next->data.mode_ == EXCLUSIVE) {
-        fetch_and_increment(&(list->outstanding_locks));
-        next->data.state_ = ACTIVE;
-        barrier();
-      }
-      else {
+        bool made_active = cmp_and_swap32(
+            (uint32_t *)(&(next->data.state_)),
+            (uint32_t)WAIT,
+            (uint32_t)ACTIVE);
+        if (made_active) {
+          fetch_and_increment_signed(&(list->outstanding_locks));
+        }
+      } else {
         for (; next != NULL && next->data.mode_ == SHARED; next = list->latch_free_next(next)) {
-          fetch_and_increment(&(list->outstanding_locks));
-          next->data.state_ = ACTIVE;
-          barrier();
+          bool made_active = cmp_and_swap32(
+              (uint32_t *)(&(next->data.state_)),
+              (uint32_t)WAIT,
+              (uint32_t)ACTIVE);
+          if (made_active) {
+            fetch_and_increment_signed(&(list->outstanding_locks));
+          }
         }
       }
     }
   }
-  lr->data.state_ = OBSOLETE; 
-  barrier();
-
 }
 
 LockState LatchFreeLockManager::CheckState(const Txn *txn, const Key key) {

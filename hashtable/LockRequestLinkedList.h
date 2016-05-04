@@ -25,7 +25,7 @@ public:
   using TLinkedList<LockRequest>::head;
   using TLinkedList<LockRequest>::tail;
   using TLinkedList<LockRequest>::empty;
-  uint64_t outstanding_locks;
+  int64_t outstanding_locks;
 private:
   TNode<LockRequest> * createRequest(LockRequest lr);
   TNode<LockRequest> * atomicCreateRequest(LockRequest lr);

@@ -34,6 +34,17 @@ cmp_and_swap(volatile uint64_t *to_write,
   return out == to_cmp;
 }
 
+inline bool
+cmp_and_swap32(volatile uint32_t *to_write,
+             uint32_t to_cmp,
+             uint32_t new_value) {
+  volatile uint32_t out;
+  asm volatile("lock; cmpxchgl %2, %1"
+               : "=a" (out), "+m"(*to_write)
+               : "q" (new_value), "0"(to_cmp));
+  return out == to_cmp;
+}
+
 inline uint64_t
 xchgq(volatile uint64_t *addr, uint64_t new_val)
 {
@@ -118,6 +129,17 @@ fetch_and_increment(volatile uint64_t *variable)
   return counter_value + 1;
 }
 
+inline int64_t
+fetch_and_increment_signed(volatile int64_t *variable)
+{
+  long counter_value = 1;
+  asm volatile ("lock; xaddq %%rax, %1;"
+                : "=a" (counter_value), "+m" (*variable)
+                : "a" (counter_value)
+                : "memory");
+  return counter_value + 1;
+}
+
 inline uint64_t
 fetch_and_add(volatile uint64_t *variable, long value)
 {
@@ -140,6 +162,16 @@ fetch_and_decrement(volatile uint64_t *variable)
   return counter_value - 1;
 }    
 
+inline int64_t
+fetch_and_decrement_signed(volatile int64_t *variable)
+{
+  long counter_value = -1;
+  asm volatile ("lock; xaddq %%rax, %1;"
+                : "=a" (counter_value), "+m" (*variable)
+                : "a" (counter_value)
+                : "memory");
+  return counter_value - 1;
+}
 
 
 // Use this function to read the timestamp counter. 
