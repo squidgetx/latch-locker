@@ -15,7 +15,7 @@
 #include "util/common.h"
 #include "lock_request.h"
 
-#define DEFAULT_SPIN_TIME 10000
+#define DEFAULT_SPIN_TIME 1000000
 #define NUM_HOT_REQUESTS 20
 #define KEYS 100000
 #define TRANSACTIONS_PER_TEST 500000
