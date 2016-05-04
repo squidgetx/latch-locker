@@ -16,21 +16,16 @@
 
 class Tester {
 public:
-  Tester() : txn_counter(0), NUM_HOT_REQUESTS(20), KEYS(100000) {}
+  Tester() {}
   void Run();
 private:
   // one LockRequest Sequence
-  void Benchmark(std::vector<Txn*> * transactions);
-  Txn *GenerateTransaction(int n, double w, std::vector<Key> &hot_set, std::vector<Key> &cold_set);
+  void Benchmark(std::vector<Txn*> * transactions, int nthreads);
+  Txn *GenerateTransaction(double w, std::vector<Key> &hot_set, std::vector<Key> &cold_set);
 
   pthread_t pthreads[600];
-  int NUM_THREADS;
   int txn_counter;
 
-
-  int NUM_HOT_REQUESTS;
-
-  int KEYS;
 };
 
 #endif // TESTER_TESTER_H

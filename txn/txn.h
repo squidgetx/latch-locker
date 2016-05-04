@@ -9,9 +9,7 @@ class LockManager;
 #include "hashtable/TNode.h"
 #include "lock_request.h"
 
-#define TRANSACTIONS_PER_TEST 500000
 #define REQUESTS_PER_TRANSACTION 20
-
 class Txn {
   public:
     Txn(int txn, std::vector<std::pair<Key, LockMode>> q, int spin) : txn_id(txn), keys(q), spintime(spin) {}
