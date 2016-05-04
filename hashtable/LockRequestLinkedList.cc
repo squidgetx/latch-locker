@@ -34,7 +34,7 @@ void LockRequestLinkedList::atomic_synchronize() {
 void LockRequestLinkedList::next_pointer_update() {
     TNode<LockRequest>* old_head = this->head;
     //update head to first non-obsolete lock
-    while (old_head != NULL && old_head->data.state_ == OBSOLETE) {
+    while (old_head != NULL && old_head->data.state_ == OBSOLETE && old_head->next != NULL) {
         if (!cmp_and_swap((uint64_t*)&(this->head), (uint64_t) old_head, (uint64_t)old_head->next))
             break; //another thread is updating, so let it do its thing
         else
