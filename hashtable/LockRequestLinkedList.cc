@@ -34,7 +34,8 @@ void LockRequestLinkedList::atomic_synchronize() {
 void LockRequestLinkedList::next_pointer_update() {
     TNode<LockRequest>* old_head = this->head;
     //update head to first non-obsolete lock
-    while (old_head != NULL && old_head->data.state_ == OBSOLETE) {
+    while (old_head != NULL && old_head->data.state_ == OBSOLETE && old_head->next != NULL) {
+        
         if (!cmp_and_swap((uint64_t*)&(this->head), (uint64_t) old_head, (uint64_t)old_head->next))
             break; //another thread is updating, so let it do its thing
         else
@@ -42,9 +43,13 @@ void LockRequestLinkedList::next_pointer_update() {
             old_head = this->head;
         }
     }
+    // Now old_head == NULL and tail still is the old node value
     TNode<LockRequest>* prev = this->head;
-    if (prev == NULL)
-      return;
+    if (prev == NULL) {
+      // OK, what if there's another thread appending at the same time??
+      // Nope, this is no go, if they edit tail before we do then its all fucked
+       return;
+    }
     TNode<LockRequest>* node = prev->next;
     while (node != NULL && node != tail) {
         if (node->data.state_ == OBSOLETE) {
@@ -54,7 +59,7 @@ void LockRequestLinkedList::next_pointer_update() {
         prev = node;
         node = node->next;
     }
-}
+   }
 
 TNode<LockRequest> * LockRequestLinkedList::atomic_lock_insert(TNode<LockRequest> *lr)
 {
@@ -65,7 +70,6 @@ TNode<LockRequest> * LockRequestLinkedList::atomic_lock_insert(TNode<LockRequest
   atomic_synchronize();
   next_pointer_update();
   atomic_synchronize();
-
   return lr;
 }
 

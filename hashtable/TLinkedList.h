@@ -3,6 +3,7 @@
 
 #include "TNode.h"
 #include "util/util.h"
+#include <cassert>
 
 template <typename T>
 class TLinkedList
@@ -50,10 +51,15 @@ void TLinkedList<T>::atomic_append(TNode<T> *n) {
     TNode<T>* old_tail = (TNode<T> *) xchgq((uint64_t *) &tail, (uint64_t) n);
     if (old_tail != NULL)
         old_tail->next = n;
-    else
+    else {
         head = n;
+    }
     fetch_and_increment((uint64_t *) &isize);
+    if (head == NULL) {
+      assert(tail == NULL);
+    }
 }
+
 
 /*
 template <class T>
