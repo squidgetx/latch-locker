@@ -16,7 +16,7 @@
 
 class Tester {
 public:
-  Tester() : txn_counter(0), NUM_HOT_REQUESTS(1), KEYS(100000) {}
+  Tester() : txn_counter(0), NUM_HOT_REQUESTS(20), KEYS(100000) {}
   void Run();
 private:
   // one LockRequest Sequence

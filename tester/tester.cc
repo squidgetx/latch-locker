@@ -43,7 +43,6 @@ void Tester::Run() {
   int n = REQUESTS_PER_TRANSACTION; // number of lock requests per transaction
   double w = 1;
 
-
   NUM_THREADS = 64;
 
   std::cout << "Test contention. Fixed 64 cores" << std::endl;
@@ -51,11 +50,11 @@ void Tester::Run() {
 
   // vary contention
   
-  for (double hs_size = 0.05; hs_size > 0.00001; hs_size/=2) {
+  for (int hs_size = KEYS; hs_size > 0.05*KEYS; hs_size -= 5000) {
     std::vector<Key> hot_set;
     std::vector<Key> cold_set;
     for (int i = 0; i < KEYS; i++) {
-      if ((rand() % 100) < hs_size * 100) {
+      if (i < hs_size) {
         hot_set.push_back(i);
       } else {
         cold_set.push_back(i);
@@ -77,9 +76,9 @@ void Tester::Run() {
     std::vector<Key> hot_set;
     std::vector<Key> cold_set;
 
-    double hs_size = 0.05;
+    double hs_size = KEYS;
     for (int i = 0; i < KEYS; i++) {
-      if ((rand() % 100) < hs_size * 100) {
+      if (i < hs_size) {
         hot_set.push_back(i);
       } else {
         cold_set.push_back(i);
@@ -96,14 +95,14 @@ void Tester::Run() {
   }
 
   std::cout << "Test thread influence. High Contention. Fixed 0.001 hot set size" << std::endl;
-  for (int num_threads = 1; num_threads <= 512; num_threads *= 2) {
-    NUM_THREADS = num_threads;
+  for (int i = 0; i < THREAD_SIZE_LENGTH; i++ ) {
+    NUM_THREADS = threadSizes[i];
     std::vector<Key> hot_set;
     std::vector<Key> cold_set;
 
-    double hs_size = 0.001;
+    double hs_size = 0.05*KEYS;
     for (int i = 0; i < KEYS; i++) {
-      if ((rand() % 100) < hs_size * 100) {
+      if (i < hs_size) {
         hot_set.push_back(i);
       } else {
         cold_set.push_back(i);
